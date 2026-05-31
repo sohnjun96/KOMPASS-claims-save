@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>K-SCAN</title>
+  <link rel="stylesheet" href="../../suite/unified-theme.css" />
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #64748b;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --accent: #0f346e;
+      --bg: #f8fafc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--ks-font-sans, "IBM Plex Sans", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif);
+      background:
+        radial-gradient(520px 240px at -10% -10%, #e2e8f0 0%, rgba(226,232,240,0) 70%),
+        radial-gradient(520px 240px at 110% -10%, #fde68a 0%, rgba(253,230,138,0) 70%),
+        var(--bg);
+      color: var(--ink);
+    }
+
+    .app {
+      width: 100%;
+      min-width: 0;
+      padding: 16px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+    }
+
+    .logo-svg { width: 28px; height: 28px; }
+
+    .title {
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -0.2px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      margin-bottom: 12px;
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .secondary-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.2s ease;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    #start {
+      background: linear-gradient(135deg, var(--accent) 0%, #143a7a 60%, #1d4ed8 100%);
+      color: #ffffff;
+      box-shadow: 0 8px 16px rgba(15, 52, 110, 0.25);
+    }
+
+    #stop,
+    #refresh,
+    #exportXlsx,
+    #clear {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid var(--line);
+    }
+
+    .status {
+      font-size: 12px;
+      color: #0f172a;
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+
+    .status[data-state="running"] {
+      border-style: solid;
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1e3a8a;
+    }
+
+    .status[data-state="success"] {
+      border-style: solid;
+      border-color: #86efac;
+      background: #f0fdf4;
+      color: #14532d;
+    }
+
+    .status[data-state="error"] {
+      border-style: solid;
+      border-color: #fecaca;
+      background: #fef2f2;
+      color: #7f1d1d;
+    }
+
+    .stats-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .stats-count {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.2px;
+    }
+
+    .stats-meta {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .capture-list {
+      display: grid;
+      gap: 10px;
+      max-height: 58vh;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .capture-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+    }
+
+    .capture-item-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .capture-item-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .capture-rank {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #0f346e;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .capture-appno {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: -0.2px;
+    }
+
+    .capture-item-time {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .capture-claim {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #0f172a;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .empty-state {
+      display: grid;
+      gap: 6px;
+      padding: 18px 14px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 14px;
+      background: #f8fafc;
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .empty-state span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <svg class="logo-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 4L4 16V30C4 44.6 15.4 56.8 32 60C48.6 56.8 60 44.6 60 30V16L32 4Z" fill="#0F346E"/>
+          <path d="M20 18V46" stroke="white" stroke-width="6" stroke-linecap="round"/>
+          <path d="M44 18L20 32L44 46" stroke="#FCB034" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="title">K-SCAN</div>
+        <div class="subtitle">출원번호와 청구항을 수집해서 목록으로 보여줍니다.</div>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="actions">
+          <button id="start" type="button">캡처 시작</button>
+          <button id="stop" type="button">캡처 중지</button>
+        </div>
+        <div class="secondary-actions">
+          <button id="refresh" type="button">새로고침</button>
+          <button id="exportXlsx" type="button">엑셀 저장</button>
+          <button id="clear" type="button">전체 삭제</button>
+        </div>
+        <div class="status" id="status" data-state="idle">대기 중</div>
+      </div>
+      <div class="hint">KOMPASS 탭에서 캡처를 시작하면, 수집된 항목이 아래 목록에 바로 쌓입니다.</div>
+    </div>
+
+    <div class="card">
+      <div class="stats-row">
+        <div class="stats-count" id="captureCount">0건</div>
+        <div class="stats-meta" id="captureMeta">수집된 항목이 없습니다.</div>
+      </div>
+      <div class="capture-list" id="captureList"></div>
+    </div>
+  </div>
+
+  <script src="../../suite/shared-constants.js"></script>
+  <script src="../../suite/shared-version.js"></script>
+  <script src="../../suite/shared-feedback.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

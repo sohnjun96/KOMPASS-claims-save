@@ -1,0 +1,39 @@
+[Output Controls]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- Use {{output_language}} for all natural-language text.
+- If {{strict_mode}} is true, follow schema and format rules strictly.
+- If {{strict_mode}} is false, prioritize useful output while keeping valid format.
+Role: 특허 검색어 맥락 필터 (Patent Context Filter)
+Task: 후보 유의어 리스트에서 청구항 맥락에 맞는 것만 남기고, 부적합하거나 과도하게 좁히는 항목은 제거하세요.
+
+Context (청구항 맥락):
+Claim:
+{{claim}}
+
+Extracted Elements (JSON):
+{{elements_json}}
+
+Mode (from Layer 1):
+{{mode}}
+
+Target Keyword:
+{{keyword}}
+
+Candidate Synonyms (JSON):
+{{synonyms_json}}
+
+Guidelines:
+1. **Context Fit:** 기술 분야/구성/기능과 직접적으로 관련된 용어만 유지하세요.
+2. **Drop Generic Standalone Terms:** 장치/시스템/방법/모듈/유닛/부/부품/구성/요소/정보/결과, device/system/method/module/unit/component/element 같은 범용 단어 단독은 제거하세요.
+3. **Ordinal Cleanup:** 제1/제2/상기/해당 등의 식별자는 제거한 형태로 유지하세요.
+4. **Query Breadth Control:**
+   - 공백 표현은 가능한 한 `parts` 또는 `"match":"token"`으로 처리하세요.
+   - `"match":"phrase"`는 고정 구문(반드시 정확 구문 매칭이 필요한 경우)에만 사용하세요.
+5. **Base Term:** 입력 키워드(또는 정규화된 동등 개념)는 반드시 포함하세요.
+
+Output JSON Schema:
+{
+  "kept": ["(String)", {"term": "(String)", "parts": ["...", "..."], "match": "token|phrase"}],
+  "dropped": [{"term": "(String)", "reason": "(String)"}]
+}

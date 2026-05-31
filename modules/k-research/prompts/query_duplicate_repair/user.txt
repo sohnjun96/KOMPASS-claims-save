@@ -1,0 +1,11 @@
+청구항 원문:
+{{claim_text}}
+
+중복 복구 컨텍스트(JSON):
+{{repair_context_json}}
+
+요청:
+- 기존 검색식과 실질적으로 다른 검색식이 되도록 feature 단위 대체어를 제시하라.
+- `query_expression` 문자열은 작성하지 말고 `final_terms_by_feature` 중심 JSON만 반환하라.
+- 가능한 경우 핵심 feature 1~2개를 우선 조정하라.
+- 스키마 enum에 없는 값(`remove_all`, `drop_all` 등)은 사용하지 마라.

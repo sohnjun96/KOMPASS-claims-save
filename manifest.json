@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "K-SUITE",
+  "version": "1.4.3",
+  "description": "특허 LLM 활용 도우미",
+  "action": {
+    "default_title": "K-SUITE",
+    "default_popup": "suite/popup.html"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "activeTab",
+    "debugger",
+    "sidePanel",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://llm.moip.go.kr/*",
+    "<all_urls>"
+  ],
+  "side_panel": {
+    "default_path": "suite/sidepanel-home.html"
+  },
+  "icons": {
+    "16": "modules/k-query/icons/icon-16.png",
+    "32": "modules/k-query/icons/icon-32.png",
+    "48": "modules/k-query/icons/icon-48.png",
+    "128": "modules/k-query/icons/icon-128.png"
+  }
+}

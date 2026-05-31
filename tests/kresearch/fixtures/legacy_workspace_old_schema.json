@@ -1,0 +1,54 @@
+{
+  "kresearch_sessions_v1": [
+    {
+      "sessionId": "legacy_session_1",
+      "claimText": "A system including a motor drive and sensor feedback.",
+      "status": "ready",
+      "features": [
+        { "id": "F1", "text": "motor drive", "core": true },
+        { "id": "F2", "text": "sensor feedback", "core": false }
+      ],
+      "queryVersions": [
+        {
+          "queryVersionId": "legacy_qv_1",
+          "source": "legacy",
+          "expression": "",
+          "termsByFeature": {
+            "F1": ["motor drive"],
+            "F2": ["sensor feedback"]
+          },
+          "featureStateById": {
+            "F1": { "enabled": true, "core": true, "text": "motor drive" },
+            "F2": { "enabled": true, "core": false, "text": "sensor feedback" }
+          }
+        }
+      ],
+      "currentQueryVersionId": "legacy_qv_1",
+      "feedbackLog": [
+        { "at": "2026-03-01T00:00:00.000Z", "text": "legacy log" }
+      ]
+    }
+  ],
+  "kresearch_active_session_v1": "legacy_session_1",
+  "kresearch_eval_history_v1": [
+    {
+      "sessionId": "legacy_session_1",
+      "iterationNo": 1,
+      "runId": "krun_legacy_1",
+      "queryVersionId": "legacy_qv_1",
+      "evaluations": [
+        {
+          "id": "eval_1",
+          "applicationNo": "US-LEGACY-001",
+          "score": 78,
+          "feature_hits": ["F1"],
+          "missing_features": ["F2"],
+          "reason": "legacy format row"
+        }
+      ]
+    }
+  ],
+  "kresearch_settings_v1": {
+    "maxIterations": 6
+  }
+}

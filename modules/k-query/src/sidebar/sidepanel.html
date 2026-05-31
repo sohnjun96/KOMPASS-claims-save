@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>K-Query</title>
+    <link rel="stylesheet" href="./sidepanel.css" />
+    <link rel="stylesheet" href="../../../../suite/unified-theme.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="hero reveal" style="animation-delay: 0s;">
+        <div class="hero-main">
+          <div class="logo-mark" aria-hidden="true">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M32 4L4 16V30C4 44.6 15.4 56.8 32 60C48.6 56.8 60 44.6 60 30V16L32 4Z" fill="#0F346E"/>
+              <path d="M20 18V46" stroke="white" stroke-width="6" stroke-linecap="round"/>
+              <path d="M44 18L20 32L44 46" stroke="#FCB034" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="hero-text">
+            <div class="hero-title-row">
+              <h1>K-Query</h1>
+              <button class="chip chip-outline info-btn" type="button" data-info-key="ensemble">앙상블 설명</button>
+            </div>
+            <p>청구항 기반 검색식 생성 AI입니다.</p>
+          </div>
+        </div>
+        <div class="hero-tags">
+          <button class="tag info-btn" type="button" data-info-key="layer1">Layer 1 · 분석</button>
+          <button class="tag info-btn" type="button" data-info-key="layer2">Layer 2 · 확장</button>
+          <button class="tag info-btn" type="button" data-info-key="layer3">Layer 3 · 조립</button>
+        </div>
+      </header>
+
+      <section class="workflow-command-dock reveal" style="animation-delay: 0.04s;">
+        <div class="command-dock-main">
+          <button id="dockGenerateBtn" class="btn primary small" type="button">검색식 생성</button>
+          <button id="dockCopyBtn" class="btn ghost small" type="button">결과 복사</button>
+          <button id="dockExportBtn" class="btn ghost small" type="button">JSON Export</button>
+          <button id="dockAdvancedBtn" class="btn ghost small" type="button">고급 확인</button>
+        </div>
+        <div class="command-dock-meta">
+          <span id="dockStatus" class="meta-text">Ready</span>
+          <span id="dockGeneratedAt" class="meta-text">Last run: -</span>
+        </div>
+      </section>
+
+      <div id="mainContent">
+        <section class="panel-grid">
+          <div class="panel-card reveal" style="animation-delay: 0.08s;">
+            <div class="panel-head">
+              <div>
+                <h3>청구항 입력</h3>
+                <p>청구항을 입력하면 구조화된 검색식을 생성합니다.</p>
+              </div>
+            </div>
+            <label for="claimInput">청구항</label>
+            <textarea id="claimInput" placeholder="청구항 텍스트를 입력하세요"></textarea>
+            <div class="input-meta">
+              <span id="claimCount" class="meta-text">0자</span>
+              <div class="meta-actions">
+                <button id="sampleBtn" class="btn ghost tiny" type="button">샘플 넣기</button>
+                <button id="clearInputBtn" class="btn ghost tiny" type="button">입력 지우기</button>
+                <button id="toggleInputCompactBtn" class="btn ghost tiny" type="button" aria-pressed="false">Input Compact</button>
+                <button id="mockModeBtn" class="btn ghost tiny" type="button" aria-pressed="true">Mock: ON</button>
+              </div>
+            </div>
+            <ul class="hint-list">
+              <li>발명의 핵심 구성과 기능이 드러나도록 원문 그대로 붙여 넣으세요.</li>
+              <li>불필요한 일반 표현은 제외되어도 검색 정확도는 유지됩니다.</li>
+            </ul>
+            <div class="action-row">
+              <button id="generateBtn" class="btn primary" type="button">검색식 생성</button>
+            </div>
+          </div>
+
+          <div class="panel-card reveal" style="animation-delay: 0.1s;">
+            <div class="panel-head">
+              <div>
+                <h3>검색식 결과</h3>
+                <p>후처리가 적용된 최종 검색식입니다.</p>
+              </div>
+              <button id="copyResultBtn" class="btn ghost small" type="button">바로 복사</button>
+            </div>
+            <div class="result-summary" id="resultSummary" aria-live="polite">
+              <span id="resultModeBadge" class="result-badge">모드: 자동</span>
+              <span id="resultElementBadge" class="result-badge">요소: 0</span>
+              <span id="resultSynonymBadge" class="result-badge">동의어: 0</span>
+              <span id="resultLengthBadge" class="result-badge">길이: 0</span>
+            </div>
+            <label for="result">결과</label>
+            <textarea id="result" readonly></textarea>
+            <div class="button-row export-row">
+              <button id="exportQueryBtn" class="btn ghost small" type="button">Export Query</button>
+              <button id="exportBundleBtn" class="btn ghost small" type="button">Export JSON Bundle</button>
+            </div>
+            <div class="breadth-control">
+              <div class="breadth-row">
+                <span class="breadth-title">검색폭 조절</span>
+                <span id="breadthLabel" class="breadth-value">보통</span>
+              </div>
+              <input id="breadthSlider" type="range" min="0" max="100" step="1" value="40" />
+              <div class="breadth-scale">
+                <span>좁게</span>
+                <span>넓게</span>
+              </div>
+            </div>
+            <div class="query-preview">
+              <div class="preview-head">
+                <span class="preview-title">하이라이트 미리보기</span>
+              </div>
+              <div id="queryPreview" class="query-preview-body">검색식 생성 후 표시됩니다.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="quick-nav reveal" style="animation-delay: 0.11s;">
+          <button class="btn ghost small quick-nav-btn" type="button" data-focus-panel="status">실행 상태</button>
+          <button class="btn ghost small quick-nav-btn" type="button" data-focus-panel="synonyms">동의어 편집</button>
+          <button class="btn ghost small quick-nav-btn" type="button" data-focus-panel="dictionary">도메인 사전</button>
+          <button class="btn ghost small quick-nav-btn" type="button" data-focus-panel="logs">로그</button>
+        </section>
+
+        <section class="fold-card reveal" id="statusFold" data-fold-key="status" data-collapsed="false" style="animation-delay: 0.12s;">
+          <button class="fold-toggle" type="button" data-fold-toggle="status" aria-expanded="true" aria-controls="statusFoldBody">
+            <span class="fold-title">실행 상태</span>
+            <span id="statusFoldBadge" class="fold-badge">대기 중</span>
+            <span class="fold-arrow" aria-hidden="true"></span>
+          </button>
+          <div class="fold-body" id="statusFoldBody">
+            <section class="status-rail" id="statusRail" data-state="idle">
+              <div class="status-head">
+                <div>
+                  <h3>실시간 파이프라인</h3>
+                  <p>현재 수행 중인 단계가 표시됩니다.</p>
+                </div>
+                <div class="status-meta">
+                  <span class="mode-badge" id="modeBadge">모드: 자동</span>
+                  <div class="status-indicator" id="statusIndicator">
+                    <span class="pulse"></span>
+                    <span id="statusText">대기 중</span>
+                  </div>
+                </div>
+              </div>
+              <div class="status-steps">
+                <div class="status-step" data-layer="Layer 1" data-state="idle">
+                  <div class="step-dot"></div>
+                  <div class="step-info">
+                    <div class="step-title">Layer 1 · 분석</div>
+                    <div class="step-desc">키워드 추출 · 관계 매핑</div>
+                  </div>
+                  <button class="btn ghost tiny step-action" type="button" data-rerun-layer="Layer 1">재실행</button>
+                </div>
+                <div class="status-step" data-layer="Layer 2" data-state="idle">
+                  <div class="step-dot"></div>
+                  <div class="step-info">
+                    <div class="step-title">Layer 2 · 확장</div>
+                    <div class="step-desc">동의어 후보 확장 · 후처리</div>
+                  </div>
+                  <button class="btn ghost tiny step-action" type="button" data-rerun-layer="Layer 2">재실행</button>
+                </div>
+                <div class="status-step" data-layer="Layer 3" data-state="idle">
+                  <div class="step-dot"></div>
+                  <div class="step-info">
+                    <div class="step-title">Layer 3 · 조립</div>
+                    <div class="step-desc">규칙 조립 · 문법 검증</div>
+                  </div>
+                  <button class="btn ghost tiny step-action" type="button" data-rerun-layer="Layer 3">재실행</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="fold-card reveal" id="synonymFold" data-fold-key="synonyms" data-collapsed="true" style="animation-delay: 0.13s;">
+          <button class="fold-toggle" type="button" data-fold-toggle="synonyms" aria-expanded="false" aria-controls="synonymFoldBody">
+            <span class="fold-title">요소/동의어 편집</span>
+            <span id="synonymFoldBadge" class="fold-badge">준비 전</span>
+            <span class="fold-arrow" aria-hidden="true"></span>
+          </button>
+          <div class="fold-body" id="synonymFoldBody">
+            <section class="panel-card" id="synonymEditorCard">
+              <div class="panel-head">
+                <div>
+                  <h3>요소/동의어 편집</h3>
+                  <p>체크로 포함/제외하면 결과에 즉시 반영됩니다.</p>
+                </div>
+                <button id="resetEditorBtn" class="btn ghost small" type="button">원본 복원</button>
+              </div>
+              <div class="editor-controls">
+                <label class="editor-toggle" for="coreSynonymToggle">
+                  <input id="coreSynonymToggle" type="checkbox" checked />
+                  <span>Core synonym lock</span>
+                </label>
+                <span id="coreSynonymState" class="editor-toggle-state">ON</span>
+              </div>
+              <div id="synonymEditor" class="synonym-editor">
+                <div class="synonym-empty">검색식 생성 후 표시됩니다.</div>
+              </div>
+              <div class="editor-note">필수 항목은 해제할 수 없습니다.</div>
+            </section>
+          </div>
+        </section>
+
+        <section class="panel-card reveal" id="domainDictionaryLauncherCard" style="animation-delay: 0.14s;">
+          <div class="panel-head">
+            <div>
+              <h3>Domain Dictionary</h3>
+              <p>Layer 2 동의어 확장에 사용할 사용자 사전입니다.</p>
+            </div>
+            <button id="openDomainDictModalBtn" class="btn primary small" type="button">사전 관리</button>
+          </div>
+          <div class="dictionary-launcher-row">
+            <div id="domainDictLauncherMeta" class="dictionary-stats">0 entries · 0 terms</div>
+          </div>
+          <div class="editor-controls">
+            <label class="editor-toggle" for="domainDictionaryToggle">
+              <input id="domainDictionaryToggle" type="checkbox" checked />
+              <span>Use Dictionary</span>
+            </label>
+            <span id="domainDictionaryState" class="editor-toggle-state">ON</span>
+          </div>
+          <div class="editor-note">상세 편집은 팝업에서 진행됩니다.</div>
+        </section>
+
+        <section class="fold-card reveal" id="logsFold" data-fold-key="logs" data-collapsed="true" style="animation-delay: 0.15s;">
+          <button class="fold-toggle" type="button" data-fold-toggle="logs" aria-expanded="false" aria-controls="logsFoldBody">
+            <span class="fold-title">로그</span>
+            <span id="logsFoldBadge" class="fold-badge">0 lines</span>
+            <span class="fold-arrow" aria-hidden="true"></span>
+          </button>
+          <div class="fold-body" id="logsFoldBody">
+            <section class="panel-grid logs">
+              <div class="panel-card">
+                <div class="panel-head">
+                  <div>
+                    <h3>로그</h3>
+                    <p>진행/개발 로그를 탭으로 확인합니다.</p>
+                  </div>
+                  <button id="clearLogsBtn" class="btn ghost" type="button">로그 지우기</button>
+                </div>
+                <div class="tab-bar" role="tablist">
+                  <button class="tab-btn is-active" type="button" data-log-tab="progress" aria-selected="true">진행 로그</button>
+                  <button class="tab-btn" type="button" data-log-tab="dev" aria-selected="false">개발용 로그</button>
+                </div>
+                <div class="tab-panel is-active" data-log-panel="progress">
+                  <div id="log" class="log"></div>
+                </div>
+                <div class="tab-panel" data-log-panel="dev">
+                  <div id="devLog" class="dev-log"></div>
+                  <div class="dev-summary">
+                    <h4>레이어 응답 요약</h4>
+                    <div id="layerSummary" class="layer-summary"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      <p class="copyright">© 2026. 반도체설계심사과 심사관 손준혁. All Rights Reserved.</p>
+    </footer>
+
+    <div class="modal is-hidden" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+      <div class="modal-overlay" data-info-modal-close></div>
+      <div class="modal-card" role="document">
+        <div class="modal-head">
+          <h4 id="infoModalTitle">설명</h4>
+          <button class="btn ghost tiny" type="button" data-info-modal-close>닫기</button>
+        </div>
+        <div id="infoModalBody" class="modal-body"></div>
+      </div>
+    </div>
+
+    <div class="modal is-hidden" id="domainDictModal" role="dialog" aria-modal="true" aria-labelledby="domainDictModalTitle">
+      <div class="modal-overlay" data-domain-dict-close></div>
+      <div class="modal-card modal-card-wide" role="document">
+        <div class="modal-head">
+          <h4 id="domainDictModalTitle">Domain Dictionary Manager</h4>
+          <button class="btn ghost tiny" type="button" data-domain-dict-close>닫기</button>
+        </div>
+        <div class="modal-body modal-body-scroll">
+          <div class="dictionary-toolbar">
+            <div id="domainDictStats" class="dictionary-stats">0 entries · 0 terms</div>
+            <div class="dictionary-toolbar-actions">
+              <button id="domainDictImportBtn" class="btn ghost tiny" type="button">Import JSON</button>
+              <button id="domainDictExportBtn" class="btn ghost tiny" type="button">Export JSON</button>
+              <button id="domainDictClearBtn" class="btn ghost tiny" type="button">Clear All</button>
+            </div>
+          </div>
+          <input id="domainDictFileInput" type="file" accept=".json,application/json" hidden />
+          <div class="dictionary-filter-row">
+            <input id="domainDictSearchInput" type="search" placeholder="Search by keyword or seed term..." />
+            <select id="domainDictSortSelect">
+              <option value="updated_desc">Recently Updated</option>
+              <option value="key_asc">Keyword A-Z</option>
+              <option value="terms_desc">Most Terms</option>
+            </select>
+          </div>
+          <div class="dictionary-input-grid">
+            <div class="dictionary-inputs">
+              <label for="domainDictKeyInput">Keyword (match target)</label>
+              <input id="domainDictKeyInput" type="text" placeholder="e.g. battery module" />
+            </div>
+            <div class="dictionary-inputs">
+              <label for="domainDictTermsInput">Seed terms (comma/newline separated)</label>
+              <textarea id="domainDictTermsInput" rows="3" placeholder="accumulator&#10;cell pack&#10;battery block"></textarea>
+            </div>
+          </div>
+          <div class="dictionary-action-row">
+            <button id="addDomainDictBtn" class="btn primary small" type="button">Add / Merge Entry</button>
+          </div>
+          <div class="editor-note">Tip: use <code>Ctrl+Enter</code> in seed terms to add quickly.</div>
+          <div id="domainDictionaryList" class="dictionary-list">
+            <div class="synonym-empty">No dictionary entries yet.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="../../../../suite/shared-constants.js"></script>
+    <script src="../../../../suite/shared-version.js"></script>
+    <script src="../../../../suite/shared-feedback.js"></script>
+    <script type="module" src="./sidepanel.js"></script>
+  </body>
+</html>

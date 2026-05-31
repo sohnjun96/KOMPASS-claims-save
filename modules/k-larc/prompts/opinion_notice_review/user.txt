@@ -1,0 +1,27 @@
+[Output Controls]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- Use {{output_language}} for all natural-language text.
+- If {{strict_mode}} is true, follow schema and format rules strictly.
+- If {{strict_mode}} is false, prioritize useful output while keeping valid format.
+
+[Input 1] Full Claims
+{{claims_full_text}}
+
+[Input 2] Citations (final order used in opinion notice)
+{{ordered_citations_json}}
+
+[Input 3] Opinion Notice - Claim comparison table (TSV)
+{{opinion_notice_table_tsv}}
+
+[Input 4] Opinion Notice - Difference/combination reasoning text
+{{opinion_notice_diff_notes}}
+
+Please review the opinion notice using the following checklist:
+1. Whether claim-element comparison is properly done.
+2. Whether Citation 1 is appropriate as the primary citation.
+3. Whether combination with the other citations is easy/obvious for a skilled person.
+4. Whether differences from Citation 1 are actually overcome by the cited support content.
+5. Whether the asserted passages actually exist in the primary/support citations.
+
+Return JSON only (no markdown).

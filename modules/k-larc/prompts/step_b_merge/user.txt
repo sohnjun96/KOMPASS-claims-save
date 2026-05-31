@@ -1,0 +1,13 @@
+[출력 제어]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- 자연어 필드(`Content`)는 {{output_language}}로 작성한다.
+- strict_mode가 true면 스키마/형식을 엄격히 지킨다.
+- strict_mode가 false여도 JSON 구조는 유지한다.
+
+[작업 지시]
+- 아래 Step B-2 응답들을 병합하여, 중복을 제거한 `Relevant`만 반환하라.
+- B-3 출력에는 `SourceExcerpt`를 포함하지 말고 `Feature`, `MatchType`, `Content`, `Position`만 유지하라.
+
+Step B-2 Responses (JSON):
+{{stepb2_responses_json}}

@@ -1,0 +1,7 @@
+청구항:
+{{claim_text}}
+
+Feature(JSON):
+{{features_json}}
+
+JSON만 반환하라.

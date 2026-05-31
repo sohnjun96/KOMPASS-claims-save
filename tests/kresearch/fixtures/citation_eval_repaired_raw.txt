@@ -1,0 +1,39 @@
+{
+  "score": 81,
+  "reason": "F1 exact and F2 partial evidence detected.",
+  "feature_judgments": [
+    {
+      "feature_id": "F1",
+      "status": "exact",
+      "evidence_text": "motor drive unit controls output stage",
+      "evidence_source": "description",
+      "confidence": 0.86
+    },
+    {
+      "feature_id": "F2",
+      "status": "partial",
+      "evidence_text": "feedback path from sensor to controller",
+      "evidence_source": "description",
+      "confidence": 0.64
+    },
+    {
+      "feature_id": "F3",
+      "status": "conflict",
+      "evidence_text": "temperature branch contradicts target behavior",
+      "evidence_source": "description",
+      "confidence": 0.58
+    }
+  ],
+  "feature_hits": ["F1", "F2"],
+  "missing_features": ["F3"],
+  "noisy_terms": ["display panel", "generic housing"],
+  "field_similarity": 0.82,
+  "pair_fill_value": 0.79,
+  "conflict_flags": ["contradicting thermal condition"],
+  "add_terms": [
+    { "feature_id": "F3", "term": "thermal correction path" }
+  ],
+  "remove_terms": [
+    { "feature_id": "F2", "term": "generic feedback" }
+  ]
+}

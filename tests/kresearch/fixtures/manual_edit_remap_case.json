@@ -1,0 +1,46 @@
+{
+  "features": [
+    { "id": "F1", "text": "motor drive unit", "query_role": "must", "type": "anchor", "weight": 5, "relation_to": [], "negative": false },
+    { "id": "F2", "text": "sensor feedback control", "query_role": "must", "type": "relation", "weight": 5, "relation_to": ["F1"], "negative": false },
+    { "id": "F3", "text": "thermal compensation", "query_role": "should", "type": "discriminator", "weight": 3, "relation_to": [], "negative": false }
+  ],
+  "featureStateById": {
+    "F1": { "enabled": true, "core": true, "text": "motor drive unit", "type": "anchor", "weight": 5, "queryRole": "must", "relationTo": [], "negative": false },
+    "F2": { "enabled": true, "core": true, "text": "sensor feedback control", "type": "relation", "weight": 5, "queryRole": "must", "relationTo": ["F1"], "negative": false },
+    "F3": { "enabled": true, "core": false, "text": "thermal compensation", "type": "discriminator", "weight": 3, "queryRole": "should", "relationTo": [], "negative": false }
+  },
+  "termsByFeature": {
+    "F1": ["motor drive", "drive unit"],
+    "F2": ["sensor feedback", "feedback control"],
+    "F3": ["thermal compensation"]
+  },
+  "baseQueryPlan": {
+    "groups": [
+      {
+        "group_id": "G1",
+        "feature_ids": ["F1"],
+        "required": true,
+        "terms": ["motor drive", "drive unit"],
+        "reason": "F1 representative group",
+        "mode": "anchor"
+      },
+      {
+        "group_id": "G2",
+        "feature_ids": ["F2"],
+        "required": true,
+        "terms": ["sensor feedback", "feedback control"],
+        "reason": "F2 representative group",
+        "mode": "anchor"
+      },
+      {
+        "group_id": "G3",
+        "feature_ids": ["F3"],
+        "required": false,
+        "terms": ["thermal compensation"],
+        "reason": "F3 representative group",
+        "mode": "gap"
+      }
+    ]
+  },
+  "editedExpression": "(\"sensor feedback\" | \"feedback control\") & (\"motor drive\") & (\"custom unmapped phrase\")"
+}

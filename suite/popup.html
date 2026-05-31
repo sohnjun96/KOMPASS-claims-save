@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>K-SUITE</title>
+    <link rel="stylesheet" href="./unified-theme.css" />
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">K</div>
+          <div class="brand-copy">
+            <h1>K-SUITE</h1>
+            <p>모듈 카드를 눌러 바로 실행하세요.</p>
+          </div>
+        </div>
+
+        <button id="settingsToggleBtn" class="icon-btn" type="button" title="설정 열기" aria-label="설정 열기">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8" />
+            <path d="M12 2.6v2.1M12 19.3v2.1M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2.6 12h2.1M19.3 12h2.1M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
+      </header>
+
+      <p id="gateHint" class="gate-hint" aria-live="polite"></p>
+
+      <section class="launch-zone" aria-label="모듈 실행">
+        <div id="moduleGrid" class="module-grid"></div>
+      </section>
+
+      <section id="feedbackToast" class="feedback-toast hidden" aria-live="polite">
+        <div id="launchStatus" class="status"></div>
+        <button id="retryLaunchBtn" class="feedback-retry hidden" type="button">다시 시도</button>
+      </section>
+    </main>
+
+    <div id="settingsSheet" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <button id="settingsBackdrop" class="sheet-backdrop" type="button" aria-label="설정 닫기"></button>
+
+      <section class="sheet-panel">
+        <header class="sheet-head">
+          <h2 id="settingsTitle">K-SUITE 설정</h2>
+          <button id="settingsCloseBtn" class="icon-btn" type="button" title="닫기" aria-label="닫기">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+        </header>
+
+        <p class="sheet-desc">공통 API Key 하나만 저장하면 모든 모듈에 동일하게 적용됩니다.</p>
+
+        <form id="settingsForm" class="settings-grid"></form>
+
+        <div class="sheet-actions">
+          <button id="saveSettingsBtn" class="btn primary" type="button">저장</button>
+          <button id="reloadSettingsBtn" class="btn ghost" type="button">다시 불러오기</button>
+        </div>
+
+        <p id="settingsStatus" class="status" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <script src="./shared-constants.js"></script>
+    <script src="./shared-version.js"></script>
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

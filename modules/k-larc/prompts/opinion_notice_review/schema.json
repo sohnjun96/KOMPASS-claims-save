@@ -1,0 +1,20 @@
+{
+  "required": [
+    "claims_full_text",
+    "ordered_citations_json",
+    "opinion_notice_table_tsv",
+    "opinion_notice_diff_notes"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "claims_full_text": "text",
+    "ordered_citations_json": "json",
+    "opinion_notice_table_tsv": "text",
+    "opinion_notice_diff_notes": "text",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

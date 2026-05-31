@@ -1,0 +1,22 @@
+{
+  "required": [
+    "claim",
+    "mode",
+    "elements_json",
+    "min_core",
+    "max_core"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "claim": "text",
+    "mode": "text",
+    "elements_json": "json",
+    "min_core": "text",
+    "max_core": "text",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

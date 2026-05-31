@@ -1,0 +1,68 @@
+{
+  "type": "object",
+  "required": [
+    "score",
+    "reason",
+    "feature_judgments",
+    "feature_hits",
+    "missing_features",
+    "noisy_terms",
+    "field_similarity",
+    "pair_fill_value",
+    "conflict_flags",
+    "add_terms",
+    "remove_terms"
+  ],
+  "properties": {
+    "score": { "type": "number" },
+    "reason": { "type": "string" },
+    "feature_judgments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature_id", "status", "evidence_text", "evidence_source", "confidence"],
+        "properties": {
+          "feature_id": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["exact", "equivalent", "partial", "absent", "conflict"]
+          },
+          "evidence_text": { "type": "string" },
+          "evidence_source": {
+            "type": "string",
+            "enum": ["claim", "description", "title", "unknown"]
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "feature_hits": { "type": "array", "items": { "type": "string" } },
+    "missing_features": { "type": "array", "items": { "type": "string" } },
+    "noisy_terms": { "type": "array", "items": { "type": "string" } },
+    "field_similarity": { "type": "number", "minimum": 0, "maximum": 1 },
+    "pair_fill_value": { "type": "number", "minimum": 0, "maximum": 1 },
+    "conflict_flags": { "type": "array", "items": { "type": "string" } },
+    "add_terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature_id", "term"],
+        "properties": {
+          "feature_id": { "type": "string" },
+          "term": { "type": "string" }
+        }
+      }
+    },
+    "remove_terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature_id", "term"],
+        "properties": {
+          "feature_id": { "type": "string" },
+          "term": { "type": "string" }
+        }
+      }
+    }
+  }
+}

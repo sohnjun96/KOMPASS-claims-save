@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "required": ["mode", "final_terms_by_feature"],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["balanced", "rebuild"]
+    },
+    "feature_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature_id", "replace_terms", "add_terms", "remove_terms", "disable_feature", "enable_feature", "promote_to_required", "simplify_first"],
+        "properties": {
+          "feature_id": { "type": "string" },
+          "replace_terms": { "type": "array", "items": { "type": "string" } },
+          "add_terms": { "type": "array", "items": { "type": "string" } },
+          "remove_terms": { "type": "array", "items": { "type": "string" } },
+          "disable_feature": { "type": "boolean" },
+          "enable_feature": { "type": "boolean" },
+          "promote_to_required": { "type": "boolean" },
+          "simplify_first": { "type": "boolean" },
+          "type": {
+            "type": "string",
+            "enum": ["replace", "add", "remove", "disable", "keep"]
+          }
+        }
+      }
+    },
+    "final_terms_by_feature": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

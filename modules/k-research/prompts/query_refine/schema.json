@@ -1,0 +1,71 @@
+{
+  "type": "object",
+  "required": ["mode", "feature_actions", "final_terms_by_feature"],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["widen", "narrow", "balanced", "rebuild"]
+    },
+    "feature_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature_id", "replace_terms", "add_terms", "remove_terms", "disable_feature", "enable_feature", "promote_to_required", "simplify_first"],
+        "properties": {
+          "feature_id": { "type": "string" },
+          "replace_terms": { "type": "array", "items": { "type": "string" } },
+          "add_terms": { "type": "array", "items": { "type": "string" } },
+          "remove_terms": { "type": "array", "items": { "type": "string" } },
+          "disable_feature": { "type": "boolean" },
+          "enable_feature": { "type": "boolean" },
+          "promote_to_required": { "type": "boolean" },
+          "simplify_first": { "type": "boolean" },
+          "type": {
+            "type": "string",
+            "enum": ["replace", "add", "remove", "disable", "keep"]
+          }
+        }
+      }
+    },
+    "promote_feature_ids": { "type": "array", "items": { "type": "string" } },
+    "drop_feature_ids": { "type": "array", "items": { "type": "string" } },
+    "split_feature_plans": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature_id", "groups"],
+        "properties": {
+          "feature_id": { "type": "string" },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["group_role", "terms"],
+              "properties": {
+                "group_role": {
+                  "type": "string",
+                  "enum": ["anchor", "support", "micro_entity", "micro_action", "micro_qualifier", "noise_cut"]
+                },
+                "terms": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "anti_noise_terms": { "type": "array", "items": { "type": "string" } },
+    "final_terms_by_feature": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "query_expression": { "type": "string" },
+    "dephrase_terms": { "type": "array", "items": { "type": "string" } },
+    "drop_group_ids": { "type": "array", "items": { "type": "string" } },
+    "rebuild_required": { "type": "boolean" },
+    "count_strategy_note": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}

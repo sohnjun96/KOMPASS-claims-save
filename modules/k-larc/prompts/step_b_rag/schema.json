@@ -1,0 +1,22 @@
+{
+  "required": [
+    "mapInfo",
+    "query_index",
+    "combined_query",
+    "features_json"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true,
+    "b2_skill_guidance": ""
+  },
+  "types": {
+    "mapInfo": "text",
+    "query_index": "text",
+    "combined_query": "text",
+    "features_json": "json",
+    "b2_skill_guidance": "text",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

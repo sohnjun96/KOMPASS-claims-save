@@ -1,0 +1,22 @@
+{
+  "required": [
+    "mapInfo",
+    "quick_input_json",
+    "claim_id",
+    "claim_name",
+    "claim_text"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "mapInfo": "text",
+    "quick_input_json": "json",
+    "claim_id": "text",
+    "claim_name": "text",
+    "claim_text": "text",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

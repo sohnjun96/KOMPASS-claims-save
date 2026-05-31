@@ -1,0 +1,185 @@
+:root {
+  /* K-SUITE Design Tokens */
+  --ks-brand-900: #0f346e;
+  --ks-brand-700: #1755b6;
+  --ks-brand-100: #dbeafe;
+  --ks-accent: #f59e0b;
+  --ks-ink: #0f172a;
+  --ks-muted: #475569;
+  --ks-bg: #f2f6ff;
+  --ks-surface: #ffffff;
+  --ks-border: #d7dde8;
+  --ks-shadow-sm: 0 6px 16px rgba(15, 52, 110, 0.12);
+  --ks-shadow-md: 0 12px 28px rgba(15, 52, 110, 0.16);
+  --ks-radius-sm: 10px;
+  --ks-radius-md: 14px;
+  --ks-focus-ring: 0 0 0 3px rgba(23, 85, 182, 0.2);
+  --ks-font-sans: "IBM Plex Sans", "Noto Sans KR", "Apple SD Gothic Neo", ui-sans-serif, sans-serif;
+  --ks-font-display: "IBM Plex Sans", "Noto Sans KR", "Apple SD Gothic Neo", ui-sans-serif, sans-serif;
+
+  /* K-LARC aliases */
+  --primary: var(--ks-brand-900);
+  --primary-hover: #0d2d5f;
+  --bg-color: var(--ks-bg);
+  --panel-bg: var(--ks-surface);
+  --text-main: var(--ks-ink);
+  --text-sub: var(--ks-muted);
+  --border-color: var(--ks-border);
+  --shadow-sm: var(--ks-shadow-sm);
+  --shadow-md: var(--ks-shadow-md);
+  --shadow-lg: 0 18px 34px rgba(15, 52, 110, 0.18);
+
+  /* K-Query aliases */
+  --royal-900: var(--ks-brand-900);
+  --royal-600: var(--ks-brand-700);
+  --graphite: var(--ks-ink);
+  --mist: #8ba0bd;
+  --gold: var(--ks-accent);
+  --surface: var(--ks-surface);
+  --surface-soft: rgba(255, 255, 255, 0.95);
+  --border: rgba(139, 160, 189, 0.38);
+  --font-sans: var(--ks-font-sans);
+  --font-serif: var(--ks-font-display);
+
+  /* K-SCAN aliases */
+  --ink: var(--ks-ink);
+  --muted: var(--ks-muted);
+  --card: var(--ks-surface);
+  --line: var(--ks-border);
+  --accent: var(--ks-brand-900);
+  --accent-2: var(--ks-accent);
+  --bg: var(--ks-bg);
+}
+
+body {
+  font-family: var(--ks-font-sans);
+}
+
+.ksuite-nav {
+  margin: 0 auto 14px;
+  width: min(1400px, calc(100% - 48px));
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  overflow-x: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--ks-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--ks-shadow-sm);
+  backdrop-filter: blur(8px);
+}
+
+.app .ksuite-nav,
+.page .ksuite-nav {
+  width: 100%;
+  margin: 0 0 14px;
+}
+
+.ksuite-nav::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ksuite-nav-link {
+  text-decoration: none;
+  color: var(--ks-brand-900);
+  border: 1px solid rgba(15, 52, 110, 0.2);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: rgba(219, 234, 254, 0.38);
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.ksuite-nav-link:hover {
+  transform: translateY(-1px);
+  background: rgba(219, 234, 254, 0.68);
+  border-color: rgba(15, 52, 110, 0.32);
+}
+
+.ksuite-nav-link.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--ks-brand-900), var(--ks-brand-700));
+  border-color: transparent;
+}
+
+.ksuite-nav-link.is-launching {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+button:focus-visible,
+.ksuite-nav-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ks-focus-ring);
+}
+
+.ksuite-toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  max-width: min(420px, calc(100vw - 32px));
+  border-radius: 12px;
+  border: 1px solid var(--ks-border);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--ks-shadow-md);
+  color: var(--ks-ink);
+}
+
+.ksuite-toast.is-hidden {
+  display: none;
+}
+
+.ksuite-toast.is-error {
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.ksuite-toast.is-warn {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.ksuite-toast.is-ok {
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+.ksuite-toast-content {
+  padding: 12px 12px 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.ksuite-toast-message {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ksuite-toast-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ksuite-toast-btn {
+  border: 1px solid rgba(15, 52, 110, 0.22);
+  background: #fff;
+  color: var(--ks-brand-900);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ksuite-toast-btn:hover {
+  background: rgba(219, 234, 254, 0.45);
+}
+
+.ksuite-toast-btn.is-hidden {
+  display: none;
+}

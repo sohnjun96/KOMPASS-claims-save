@@ -1,0 +1,20 @@
+{
+  "required": [
+    "all_claims_text",
+    "citation_map",
+    "summary_results_json",
+    "grounded_evidence_json"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "all_claims_text": "text",
+    "citation_map": "text",
+    "summary_results_json": "json",
+    "grounded_evidence_json": "json",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

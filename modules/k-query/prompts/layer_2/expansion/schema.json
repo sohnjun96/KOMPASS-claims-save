@@ -1,0 +1,24 @@
+{
+  "required": [
+    "keyword",
+    "feedback_instruction",
+    "claim",
+    "elements_json",
+    "mode"
+  ],
+  "optional": {
+    "model_payload": "[]",
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "keyword": "text",
+    "feedback_instruction": "text",
+    "claim": "text",
+    "elements_json": "json",
+    "mode": "text",
+    "model_payload": "json",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

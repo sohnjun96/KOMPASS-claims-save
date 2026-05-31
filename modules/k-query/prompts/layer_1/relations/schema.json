@@ -1,0 +1,16 @@
+{
+  "required": [
+    "claim",
+    "elements_json"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "claim": "text",
+    "elements_json": "json",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

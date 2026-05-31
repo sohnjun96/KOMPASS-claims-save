@@ -1,0 +1,35 @@
+[Output Controls]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- Use {{output_language}} for all natural-language summary text.
+- Return JSON only.
+
+Step B-2 Repair Request for Query Bundle #{{query_index}}
+
+Repair Request (JSON):
+{{repair_request_json}}
+
+Instructions:
+- Use the previous conversation as context, including the previous assistant JSON answer.
+- If mode is "json_repair", rewrite the previous assistant answer as valid JSON for the target features.
+- Rewrite only the invalid items listed in Repair Request (JSON).
+- Keep valid items from the previous assistant answer untouched by omission. Do not repeat them here.
+- For each repaired item, return Feature, MatchType, Content, SourceExcerpt, Position.
+- SourceExcerpt must be verbatim source text.
+- Position must be the exact sentinel token or contiguous sentinel range for SourceExcerpt.
+- If you cannot repair an item confidently, omit it.
+
+Output schema:
+{
+  "Relevant": {
+    "D1": [
+      {
+        "Feature": "F1",
+        "MatchType": "Explicit",
+        "Content": "short summary",
+        "SourceExcerpt": "verbatim excerpt from the source",
+        "Position": "single sentinel or contiguous sentinel range"
+      }
+    ]
+  }
+}

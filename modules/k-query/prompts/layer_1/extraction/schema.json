@@ -1,0 +1,14 @@
+{
+  "required": [
+    "claim"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "claim": "text",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

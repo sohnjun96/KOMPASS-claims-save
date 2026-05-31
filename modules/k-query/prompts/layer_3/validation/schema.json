@@ -1,0 +1,20 @@
+{
+  "required": [
+    "claim",
+    "mode",
+    "synonyms_json",
+    "relations_json"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "claim": "text",
+    "mode": "text",
+    "synonyms_json": "json",
+    "relations_json": "json",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

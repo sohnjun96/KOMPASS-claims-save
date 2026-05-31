@@ -1,0 +1,12 @@
+대상 청구항:
+{{claim_text}}
+
+Feature(JSON):
+{{features_json}}
+
+캡처된 인용문헌 row:
+- application_no: {{application_no}}
+- citation_text: {{citation_text}}
+- dwpi_text: {{dwpi_text}}
+
+STRICT JSON 객체만 반환하라.

@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "K-SCAN",
+  "version": "1.0",
+  "description": "KOMPASS에서 출원발명과 인용발명의 유사도를 평가하는 확장 프로그램",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "debugger"
+  ],
+  "host_permissions": [
+    "https://llm.moip.go.kr/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

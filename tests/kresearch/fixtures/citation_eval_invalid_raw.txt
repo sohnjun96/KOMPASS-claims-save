@@ -1,0 +1,7 @@
+```json
+{
+  "score": 73,
+  "feature_hits": ["F1"],
+  "missing_features": ["F2"]
+}
+```

@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "required": ["group_mappings"],
+  "properties": {
+    "group_mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["group_id", "feature_ids", "confidence", "reason"],
+        "properties": {
+          "group_id": { "type": "string" },
+          "feature_ids": { "type": "array", "items": { "type": "string" } },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

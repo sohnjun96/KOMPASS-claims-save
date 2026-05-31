@@ -1,0 +1,24 @@
+[Output Controls]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- Use {{output_language}} for all natural-language text.
+- If {{strict_mode}} is true, follow schema and format rules strictly.
+- If {{strict_mode}} is false, prioritize useful output while keeping valid format.
+**[전체 청구항]**
+{{all_claims_text}}
+
+**[인용발명 목록]**
+{{citation_map}}
+
+**[1차 분석 결과 (JSON)]**
+{{summary_results_json}}
+
+**[4단계 위치 기반 원문 추출 (JSON)]**
+{{grounded_evidence_json}}
+
+**[지시]**
+제공된 정보를 바탕으로, 위에 명시한 '검증 기준'과 '출력 규칙'을 따라 1차 분석 결과를 검증하고 문제가 있는 항목만 JSON으로 출력하세요.
+- 출력 키는 반드시 `CLAIMID_EVIDENCEID` 형식으로 작성하세요.
+- Feature-Doc 단위 묶음 판단이 아니라 EvidenceId 단위 개별 판단만 수행하세요.
+- 반드시 grounded_evidence_json의 source_snippets와 각 evidence의 content를 직접 비교해서 판단하세요.
+- grounded_evidence_json에서 grounding_status가 unresolved이면 위치 검증 실패(warning)로 처리하세요.

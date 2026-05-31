@@ -1,0 +1,14 @@
+{
+  "required": [
+    "claim_features_json"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "claim_features_json": "json",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

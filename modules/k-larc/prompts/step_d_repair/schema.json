@@ -1,0 +1,24 @@
+{
+  "required": [
+    "mapInfo",
+    "claim_id",
+    "claim_name",
+    "claim_text",
+    "missing_features_json",
+    "current_relevant_json"
+  ],
+  "optional": {
+    "output_language": "ko",
+    "strict_mode": true
+  },
+  "types": {
+    "mapInfo": "text",
+    "claim_id": "text",
+    "claim_name": "text",
+    "claim_text": "text",
+    "missing_features_json": "json",
+    "current_relevant_json": "json",
+    "output_language": "text",
+    "strict_mode": "boolean"
+  }
+}

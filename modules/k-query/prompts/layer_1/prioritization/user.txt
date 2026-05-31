@@ -1,0 +1,25 @@
+[Output Controls]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- Use {{output_language}} for all natural-language text.
+- If {{strict_mode}} is true, follow schema and format rules strictly.
+- If {{strict_mode}} is false, prioritize useful output while keeping valid format.
+
+Task:
+From the extracted elements, select only the most search-critical elements.
+
+Rules:
+1. Return between {{min_core}} and {{max_core}} element IDs.
+2. Use IDs exactly as provided.
+3. Prefer concrete technical structures/functions over generic words.
+4. If uncertain, prefer precision over recall.
+5. Return concise reason text per selected element.
+
+Claim:
+{{claim}}
+
+Mode:
+{{mode}}
+
+Extracted Elements (JSON):
+{{elements_json}}

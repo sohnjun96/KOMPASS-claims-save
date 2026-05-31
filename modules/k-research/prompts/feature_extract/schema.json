@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "required": ["features"],
+  "properties": {
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "type", "weight", "query_role", "relation_to", "negative"],
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["anchor", "relation", "discriminator", "optional"]
+          },
+          "weight": { "type": "number", "minimum": 1, "maximum": 5 },
+          "query_role": {
+            "type": "string",
+            "enum": ["must", "should", "can_drop"]
+          },
+          "relation_to": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "negative": { "type": "boolean" },
+          "search_hint": { "type": "string" }
+        }
+      }
+    },
+    "summary": { "type": "string" }
+  }
+}

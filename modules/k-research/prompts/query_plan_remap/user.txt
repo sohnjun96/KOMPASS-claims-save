@@ -1,0 +1,16 @@
+청구항:
+{{claim_text}}
+
+Feature:
+{{features_json}}
+
+현재 query expression:
+{{query_expression}}
+
+현재 query plan:
+{{query_plan_json}}
+
+Unmapped groups:
+{{unmapped_groups_json}}
+
+strict JSON만 반환하라.

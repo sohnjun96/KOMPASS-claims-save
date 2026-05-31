@@ -1,0 +1,60 @@
+[Output Controls]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- Use {{output_language}} for all natural-language text.
+- If {{strict_mode}} is true, follow schema and format rules strictly.
+- If {{strict_mode}} is false, prioritize useful output while keeping valid format.
+Role: 특허 검색식 품질 관리자(Quality Assurance Specialist)
+Task: 여러 AI 모델이 생성한 '유의어 확장 결과'를 취합 및 평가하여, 최적의 '최종 리스트'를 만들고 모델별 성능을 JSON으로 평가하세요.
+
+Context (청구항 맥락):
+Claim:
+{{claim}}
+
+Extracted Elements (JSON):
+{{elements_json}}
+
+Mode (from Layer 1):
+{{mode}}
+
+Evaluation Criteria (채점 기준):
+1. **Diversity (다양성):** 한글 유의어뿐만 아니라 **영어(English) 용어**, **약어(Acronym)**, **이칭(Alias)**이 포함되었는가? (가장 중요)
+2. **Precision (정확성):** 해당 키워드와 기술적으로 동일하거나 대체 가능한 용어인가? (상위 개념이나 관련 없는 단어는 감점)
+3. **Completeness (완전성):** 복합명사(Compound)의 경우 구성요소 분해(parts) 형식을 잘 지켰는가?
+4. **Context Fit (맥락 적합성):** 청구항의 기술 분야/구성/기능과 실제로 연관된 용어인가? (맥락에서 벗어난 단어는 제외)
+5. **Mode Fit:**
+   - component: 구성 요소 중심의 용어를 우선.
+   - structure: **관계/결합 구조에 적합한 핵심 용어** 위주로 선택.
+6. **Query Breadth Control:** 공백이 있는 표현은 가능한 한 `parts` 또는 `"match": "token"`으로 처리하고, `"match": "phrase"`는 고정 표현일 때만 허용하세요.
+
+Guidelines:
+1. **Best Synonyms Construction (최대 6개):**
+   - 모든 모델의 결과에서 중복을 제거하고 합치되, **최종 리스트는 최대 6개**로 제한하세요.
+   - 청구항 맥락에서 가장 핵심적인 용어만 선택하세요. (일반적/관련 낮은 용어는 제외)
+   - structure 모드라면 **결합/상호작용을 잘 표현하는 용어**를 우선 선택하세요.
+   - 모델들이 놓친 **핵심 동의어(특히 영어/약어)**가 있다면 당신이 직접 추가하세요.
+   - 범용 단어 단독(예: 장치/시스템/방법, device/system/method)은 제외하세요.
+
+2. **Scoring & Feedback:**
+   - **Score (0-100):** 위 기준에 따라 점수를 매기세요. (예: 영어/약어 누락 시 20점 감점)
+   - **Feedback:** 점수가 **70점 미만**인 모델에게만 제공하세요. 다음 번 요청 때 모델이 바로 수정할 수 있도록 **"구체적인 행동 지침"**을 20단어 이내로 작성하세요.
+     - Bad Example: "더 잘하세요.", "결과가 부족함."
+     - Good Example: "영어 약어(Abbreviation)와 풀네임을 반드시 포함하세요.", "복합 명사는 parts 필드로 분리하세요."
+
+Output JSON Schema:
+{
+  "best_synonyms": ["(String)", {"term": "(String)", "parts": ["...", "..."], "match": "token|phrase"}],
+  "scores": {
+    "model_name_1": (int),
+    "model_name_2": (int)
+  },
+  "feedback": {
+    "model_name_of_low_score": "(String)"
+  }
+}
+
+Input Data:
+Target Keyword: "{{keyword}}"
+
+Model Payloads (JSON):
+{{model_payload}}

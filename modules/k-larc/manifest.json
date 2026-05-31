@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "K-LARC",
+  "version": "1.2",
+  "description": "AI 기반 특허 청구항-인용발명 비교 분석 솔루션\nKOMPASS X LLM - Citation Analysis & Reference Check",
+  "action": {
+    "default_title": "Open Analyzer"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": ["https://llm.moip.go.kr/*","<all_urls>"]
+  /*"host_permissions": ["https://llm.moip.go.kr/*","<all_urls>"]*/
+}

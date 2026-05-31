@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>K-SUITE Side Panel</title>
+    <style>
+      :root {
+        --ink: #0f172a;
+        --muted: #475569;
+        --line: #d8deea;
+        --brand: #0f346e;
+        --bg: #f3f7ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(360px 180px at -20% -10%, #e2e8f0 0%, rgba(226, 232, 240, 0) 72%),
+          radial-gradient(360px 180px at 120% -10%, #fde68a 0%, rgba(253, 230, 138, 0) 72%),
+          var(--bg);
+        font-family: "IBM Plex Sans", "Noto Sans KR", "Apple SD Gothic Neo", ui-sans-serif, system-ui, sans-serif;
+      }
+      .wrap {
+        padding: 14px;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 16px;
+      }
+      p {
+        margin: 8px 0 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .links {
+        display: grid;
+        gap: 8px;
+      }
+      a {
+        display: block;
+        text-decoration: none;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: #fff;
+        padding: 10px;
+        color: var(--brand);
+        font-size: 13px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="card">
+        <h1>K-SUITE Side Panel</h1>
+        <p>팝업에서 모듈을 실행하면 해당 화면이 여기로 열립니다.</p>
+        <div class="links">
+          <a href="../modules/k-query/src/sidebar/sidepanel.html">K-Query 열기</a>
+          <a href="../modules/k-scan/sidepanel.html">K-SCAN 열기</a>
+          <a href="../modules/k-research/sidepanel.html">K-Research 열기</a>
+        </div>
+      </section>
+    </div>
+    <script src="./shared-version.js"></script>
+  </body>
+</html>

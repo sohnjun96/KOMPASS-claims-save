@@ -1,0 +1,15 @@
+[Output Controls]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- Use {{output_language}} for all natural-language text.
+- If {{strict_mode}} is true, follow schema and format rules strictly.
+- If {{strict_mode}} is false, prioritize useful output while keeping valid format.
+Target Claim:
+[Claim ID: {{claim_id}}] {{claim_name}}
+{{claim_text}}
+
+Missing Features (JSON):
+{{missing_features_json}}
+
+Current Relevant (JSON):
+{{current_relevant_json}}

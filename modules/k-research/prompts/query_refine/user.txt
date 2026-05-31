@@ -1,0 +1,14 @@
+청구항 원문:
+{{claim_text}}
+
+refine 컨텍스트(JSON):
+{{refine_context_json}}
+
+요청:
+- 위 컨텍스트를 기반으로 다음 검색식 보정안을 JSON으로만 반환하라.
+- `query_expression` 문자열은 작성하지 말고, `feature_actions` / `final_terms_by_feature` 중심으로 제시하라.
+- `duplicate_retry_hint`가 있으면 이전과 동일한 의미의 검색식이 다시 생성되지 않도록 조정하라.
+- 스키마 enum에 없는 값(`remove_all`, `keep_all` 등)은 사용하지 마라.
+
+[추가 규칙]
+- 붙여쓰기 합성어(예: 이벤트임베딩, 검색이벤트)는 그대로 사용하지 말고 원자어로 분해해 final_terms_by_feature에 반영해라.

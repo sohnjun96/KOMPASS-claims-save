@@ -1,0 +1,14 @@
+[Output Controls]
+- output_language: {{output_language}}
+- strict_mode: {{strict_mode}}
+- Use {{output_language}} for all natural-language text.
+- If {{strict_mode}} is true, follow schema and format rules strictly.
+- If {{strict_mode}} is false, prioritize useful output while keeping valid format.
+Query Bundle #{{query_index}}
+Combined Query:
+{{combined_query}}
+
+Features (JSON):
+{{features_json}}
+
+{{b2_skill_guidance}}
