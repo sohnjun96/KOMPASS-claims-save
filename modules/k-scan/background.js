@@ -12,6 +12,8 @@ const BP_SERVICE_PATH = "/bpService.do";
 const DWPI_ABST_PATH = "/getDWPIAbst.do";
 const MAX_CAPTURE_ROWS = 3000;
 const RESPONSE_BODY_READ_RETRY_DELAYS_MS = Object.freeze([0, 40, 120]);
+const AUTO_ATTACH_THROTTLE_MS = 250;
+const DERIVED_ATTACH_RETRY_DELAYS_MS = Object.freeze([20, 80, 220, 520, 1100]);
 const DWPI_PAIR_WAIT_MS = 3000;
 const EMPTY_DWPI_INFO_TEXT = "No DWPI information";
 const MAX_PARALLEL_EVAL = 12;
@@ -55,6 +57,7 @@ let evaluatedLoadPromise = null;
 const captureRunIdByRootTab = new Map();
 const captureContextByRootTab = new Map();
 const captureRootWindowIdByRootTab = new Map();
+const derivedAttachRetryStateByTab = new Map();
 let lastCaptureOnlyAutoAttachAt = 0;
 
 // 짧은 시간에 같은 pair가 반복되는 경우 중복 enqueue 방지
@@ -134,6 +137,7 @@ function clearTabCaptureState(tabId) {
   attachedTabs.delete(tabId);
   captureRootByTab.delete(tabId);
   attachingTabs.delete(tabId);
+  clearDerivedAttachRetryState(tabId);
   pending.delete(tabId);
   pendingBpPairByTab.delete(tabId);
   pendingDwpiByTab.delete(tabId);
@@ -258,9 +262,16 @@ function hasEnoughDigits(text, minDigits = 6) {
   return String(text ?? "").replace(/\D/g, "").length >= minDigits;
 }
 
+function isSkgmServiceIdToken(token) {
+  const value = String(token ?? "").trim().toUpperCase();
+  if (!value) return false;
+  return /^\/?SKGM0?\d+$/.test(value);
+}
+
 function looksLikeApplicationNo(token) {
   const value = String(token ?? "").trim();
   if (!value) return false;
+  if (isSkgmServiceIdToken(value)) return false;
   if (value.length < 6 || value.length > 40) return false;
   if (!/[0-9]/.test(value)) return false;
   if (!/^[A-Za-z0-9./\-_]+$/.test(value)) return false;
@@ -1291,6 +1302,7 @@ async function attachDebugger(tabId, options = {}) {
     attached = true;
     attachedTabs.set(tabId, { attached: true });
     captureRootByTab.set(tabId, rootTabId);
+    clearDerivedAttachRetryState(tabId);
 
     await chrome.debugger.sendCommand(target, "Network.enable", {
       // no-op options
@@ -1368,7 +1380,7 @@ function getTabHost(rawUrl) {
 
 async function autoAttachCaptureOnlyTabs(force = false) {
   const now = Date.now();
-  if (!force && (now - lastCaptureOnlyAutoAttachAt) < 1500) return;
+  if (!force && (now - lastCaptureOnlyAutoAttachAt) < AUTO_ATTACH_THROTTLE_MS) return;
   lastCaptureOnlyAutoAttachAt = now;
 
   const captureOnlyRoots = getActiveCaptureOnlyRootIds();
@@ -1416,7 +1428,9 @@ async function autoAttachCaptureOnlyTabs(force = false) {
 
       try {
         await attachDebugger(tabId, { rootTabId });
-      } catch {}
+      } catch {
+        scheduleDerivedAttachRetry(tabId, 0);
+      }
     }
   }
 }
@@ -1426,6 +1440,57 @@ async function detachCaptureScope(tabId) {
   for (const scopedTabId of scopedTabIds) {
     await detachDebugger(scopedTabId);
   }
+}
+
+function clearDerivedAttachRetryState(tabId) {
+  const current = derivedAttachRetryStateByTab.get(tabId);
+  if (current?.timer) {
+    clearTimeout(current.timer);
+  }
+  derivedAttachRetryStateByTab.delete(tabId);
+}
+
+function scheduleDerivedAttachRetry(tabId, attempt = 0) {
+  if (!Number.isInteger(tabId)) return;
+  if (attachedTabs.get(tabId)?.attached) {
+    clearDerivedAttachRetryState(tabId);
+    return;
+  }
+  if (attempt >= DERIVED_ATTACH_RETRY_DELAYS_MS.length) return;
+
+  const existing = derivedAttachRetryStateByTab.get(tabId);
+  if (existing && Number(existing.attempt || 0) >= attempt) {
+    return;
+  }
+  if (existing?.timer) {
+    clearTimeout(existing.timer);
+  }
+
+  const delayMs = Number(DERIVED_ATTACH_RETRY_DELAYS_MS[attempt] || 0);
+  const timer = setTimeout(() => {
+    const live = derivedAttachRetryStateByTab.get(tabId);
+    if (!live || live.timer !== timer) return;
+    derivedAttachRetryStateByTab.delete(tabId);
+
+    void chrome.tabs
+      .get(tabId)
+      .then((tab) => maybeAttachDerivedBundleClaimTab(tab))
+      .then(() => {
+        if (attachedTabs.get(tabId)?.attached) {
+          clearDerivedAttachRetryState(tabId);
+          return;
+        }
+        scheduleDerivedAttachRetry(tabId, attempt + 1);
+      })
+      .catch(() => {
+        scheduleDerivedAttachRetry(tabId, attempt + 1);
+      });
+  }, Math.max(0, delayMs));
+
+  derivedAttachRetryStateByTab.set(tabId, {
+    attempt,
+    timer
+  });
 }
 
 async function attachKResearchCaptureTab(rootTabId, targetTabId) {
@@ -1510,8 +1575,10 @@ async function maybeAttachDerivedBundleClaimTab(tab) {
 
   try {
     await attachDebugger(tabId, { rootTabId });
+    clearDerivedAttachRetryState(tabId);
   } catch (error) {
     console.warn("K-SCAN auto-attach failed:", error);
+    scheduleDerivedAttachRetry(tabId, 0);
   }
 }
 
@@ -1861,13 +1928,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 chrome.tabs.onCreated.addListener((tab) => {
   void maybeAttachDerivedBundleClaimTab(tab);
-  void autoAttachCaptureOnlyTabs(false).catch(() => {});
+  if (Number.isInteger(tab?.id)) {
+    scheduleDerivedAttachRetry(tab.id, 0);
+  }
+  void autoAttachCaptureOnlyTabs(true).catch(() => {});
 });
 
 chrome.tabs.onUpdated.addListener((tabId, _changeInfo, tab) => {
   if (Number.isInteger(tab?.id)) {
     void maybeAttachDerivedBundleClaimTab(tab);
-    void autoAttachCaptureOnlyTabs(false).catch(() => {});
+    scheduleDerivedAttachRetry(tab.id, 0);
+    void autoAttachCaptureOnlyTabs(true).catch(() => {});
     return;
   }
 
@@ -1875,7 +1946,10 @@ chrome.tabs.onUpdated.addListener((tabId, _changeInfo, tab) => {
     .get(tabId)
     .then((fullTab) => {
       void maybeAttachDerivedBundleClaimTab(fullTab);
-      void autoAttachCaptureOnlyTabs(false).catch(() => {});
+      if (Number.isInteger(fullTab?.id)) {
+        scheduleDerivedAttachRetry(fullTab.id, 0);
+      }
+      void autoAttachCaptureOnlyTabs(true).catch(() => {});
     })
     .catch(() => {});
 });
@@ -1886,7 +1960,8 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
     .get(tabId)
     .then((tab) => {
       void maybeAttachDerivedBundleClaimTab(tab);
-      void autoAttachCaptureOnlyTabs(false).catch(() => {});
+      scheduleDerivedAttachRetry(tabId, 0);
+      void autoAttachCaptureOnlyTabs(true).catch(() => {});
     })
     .catch(() => {});
 });
