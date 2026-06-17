@@ -542,8 +542,8 @@ function buildStylesXml() {
 }
 
 function buildSheetXml(rows) {
-  const header = ["출원번호", "청구항"];
-  const sheetRows = [header, ...rows.map((row) => [row.applicationNo || "", row.citationText || ""])];
+  const header = ["시간", "출원번호", "내용"];
+  const sheetRows = [header, ...rows.map((row) => [row.time || "", row.applicationNo || "", row.citationText || ""])];
 
   const rowsXml = sheetRows.map((cells, rowIndex) => {
     const xmlCells = cells.map((value, colIndex) => {
@@ -557,7 +557,7 @@ function buildSheetXml(rows) {
   const lastRow = sheetRows.length;
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <dimension ref="A1:B${lastRow}"/>
+  <dimension ref="A1:C${lastRow}"/>
   <sheetViews>
     <sheetView workbookViewId="0"/>
   </sheetViews>

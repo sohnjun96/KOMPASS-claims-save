@@ -1,8 +1,8 @@
-const KSCAN_DEFAULT_WEBUI_BASE_URL = "https://llm.moip.go.kr";
+const KSCAN_DEFAULT_WEBUI_BASE_URL = "http://10.133.111.32:8080";
 const CHAT_COMPLETIONS_PATH = "/api/chat/completions";
-const FALLBACK_MODEL_NAME = String(
-  globalThis.KSUITE_DEFAULT_LLM_MODEL || "gemma-26b-moe"
-).trim() || "gemma-26b-moe";
+const MODEL_NAME = String(
+  globalThis.KSUITE_DEFAULT_LLM_MODEL || "gpt-oss-120b"
+).trim();
 const HISTORY_KEY = "bp_history_v1";
 const QUEUE_STATUS_KEY = "kscan_queue_status_v1";
 const EVALUATED_APPNOS_LEGACY_KEY = "kscan_evaluated_appnos_v1";
@@ -12,8 +12,6 @@ const BP_SERVICE_PATH = "/bpService.do";
 const DWPI_ABST_PATH = "/getDWPIAbst.do";
 const MAX_CAPTURE_ROWS = 3000;
 const RESPONSE_BODY_READ_RETRY_DELAYS_MS = Object.freeze([0, 40, 120]);
-const AUTO_ATTACH_THROTTLE_MS = 250;
-const DERIVED_ATTACH_RETRY_DELAYS_MS = Object.freeze([20, 80, 220, 520, 1100]);
 const DWPI_PAIR_WAIT_MS = 3000;
 const EMPTY_DWPI_INFO_TEXT = "No DWPI information";
 const MAX_PARALLEL_EVAL = 12;
@@ -28,9 +26,8 @@ let resultWindowId = null;
 
 // tabId -> { attached: boolean }
 const attachedTabs = new Map();
-// tabId -> rootTabId (START_CAPTURE를 받은 기준 탭)
+// tabId -> rootTabId (START_CAPTURE瑜?諛쏆? 湲곗? ??
 const captureRootByTab = new Map();
-// attach 중복 호출 방지용 플래그
 const attachingTabs = new Set();
 
 // tabId -> Map(requestId -> meta)
@@ -41,14 +38,13 @@ const pendingBpPairByTab = new Map();
 
 // tabId -> Array<{ dwpiMeta, dwpiText, timer }>
 const pendingDwpiByTab = new Map();
-
-// 평가 작업 큐
 const evaluationQueue = [];
+
 let evaluationRunning = 0;
 let evaluationCompleted = 0;
 let evaluationCycleActive = false;
 
-// dedupe key(queryVersionId::applicationNo or runId::applicationNo) 추적용 집합
+// dedupe key(queryVersionId::applicationNo or runId::applicationNo) 異붿쟻??吏묓빀
 const scheduledEvaluationKeys = new Set();
 const evaluatedEvaluationKeys = new Set();
 const reevaluatingHistoryIds = new Set();
@@ -57,24 +53,23 @@ let evaluatedLoadPromise = null;
 const captureRunIdByRootTab = new Map();
 const captureContextByRootTab = new Map();
 const captureRootWindowIdByRootTab = new Map();
-const derivedAttachRetryStateByTab = new Map();
 let lastCaptureOnlyAutoAttachAt = 0;
 
-// 짧은 시간에 같은 pair가 반복되는 경우 중복 enqueue 방지
+// 吏㏃? ?쒓컙??媛숈? pair媛 諛섎났?섎뒗 寃쎌슦 以묐났 enqueue 諛⑹?
 const lastSeenByTab = new Map(); // tabId -> { sig, ts }
 
 
 const TEMPLATE_KEY = "prompt_template";
 const DEFAULT_TEMPLATE_PATH = "modules/k-scan/prompts/default.txt";
 const DEFAULT_TEMPLATE_FALLBACK = [
-  "출원발명:",
-  "{출원발명}",
+  "異쒖썝諛쒕챸:",
+  "{異쒖썝諛쒕챸}",
   "",
-  "DWPI 정보(인용발명의 요약):",
-  "{DWPI 정보}",
+  "DWPI ?뺣낫(?몄슜諛쒕챸???붿빟):",
+  "{DWPI ?뺣낫}",
   "",
-  "인용발명:",
-  "{인용발명}"
+  "?몄슜諛쒕챸:",
+  "{?몄슜諛쒕챸}"
 ].join("\n");
 let defaultTemplatePromise = null;
 
@@ -137,7 +132,6 @@ function clearTabCaptureState(tabId) {
   attachedTabs.delete(tabId);
   captureRootByTab.delete(tabId);
   attachingTabs.delete(tabId);
-  clearDerivedAttachRetryState(tabId);
   pending.delete(tabId);
   pendingBpPairByTab.delete(tabId);
   pendingDwpiByTab.delete(tabId);
@@ -152,7 +146,7 @@ function clearTabCaptureState(tabId) {
 function withTimeout(promise, timeoutMs, label) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(`${label} 타임아웃(${timeoutMs}ms)`));
+      reject(new Error(`${label} ??꾩븘??${timeoutMs}ms)`));
     }, timeoutMs);
 
     promise
@@ -201,7 +195,7 @@ function stripHtmlTags(text) {
       /<\/?(?:p|div|li|tr|td|th|h[1-6]|ul|ol|table|tbody|thead|tfoot|section|article|header|footer|main|nav|pre)\b[^>]*>/gi,
       "\n"
     )
-    // 남아있는 임의 HTML/XML 태그를 최종 제거
+    // ?⑥븘?덈뒗 ?꾩쓽 HTML/XML ?쒓렇瑜?理쒖쥌 ?쒓굅
     .replace(/<\/?[A-Za-z][A-Za-z0-9:-]*(?:\s+[^<>]*?)?>/g, " ");
 }
 
@@ -319,7 +313,7 @@ function extractApplicationNoFromText(rawText) {
   if (!text) return "";
 
   const labeledPattern =
-    /(?:application[_\s-]*no|appl(?:ication)?[_\s-]*no|app[_\s-]*no|출원번호)\s*[:=]?\s*([A-Za-z0-9./\-_]{6,40})/i;
+    /(?:application[_\s-]*no|appl(?:ication)?[_\s-]*no|app[_\s-]*no|異쒖썝踰덊샇)\s*[:=]?\s*([A-Za-z0-9./\-_]{6,40})/i;
   const labeled = text.match(labeledPattern)?.[1];
   if (looksLikeApplicationNo(labeled)) {
     return labeled;
@@ -355,32 +349,32 @@ function resolveCapturedApplicationNo({ payloadRaw, requestUrl, responseText }) 
 function applyTemplate(tpl, applicationText, citationText, dwpiText) {
   const t = (tpl && tpl.trim()) ? tpl : DEFAULT_TEMPLATE_FALLBACK;
   const hasDwpiPlaceholder =
-    t.includes("{DWPI 정보}") ||
-    t.includes("{DWPI정보}") ||
+    t.includes("{DWPI ?뺣낫}") ||
+    t.includes("{DWPI?뺣낫}") ||
     t.includes("{dwpi_info}");
 
   let template = t;
   if (!hasDwpiPlaceholder) {
-    if (template.includes("{인용발명}")) {
+    if (template.includes("{?몄슜諛쒕챸}")) {
       template = template.replace(
-        "{인용발명}",
-        "DWPI 정보(인용발명의 요약):\n{DWPI 정보}\n\n인용발명:\n{인용발명}"
+        "{?몄슜諛쒕챸}",
+        "DWPI ?뺣낫(?몄슜諛쒕챸???붿빟):\n{DWPI ?뺣낫}\n\n?몄슜諛쒕챸:\n{?몄슜諛쒕챸}"
       );
     } else {
-      template += "\n\nDWPI 정보(인용발명의 요약):\n{DWPI 정보}";
+      template += "\n\nDWPI ?뺣낫(?몄슜諛쒕챸???붿빟):\n{DWPI ?뺣낫}";
     }
   }
 
   return template
-    .replaceAll("{출원발명}", applicationText ?? "")
-    .replaceAll("{인용발명}", citationText ?? "")
-    .replaceAll("{DWPI 정보}", dwpiText ?? "")
-    .replaceAll("{DWPI정보}", dwpiText ?? "")
+    .replaceAll("{異쒖썝諛쒕챸}", applicationText ?? "")
+    .replaceAll("{?몄슜諛쒕챸}", citationText ?? "")
+    .replaceAll("{DWPI ?뺣낫}", dwpiText ?? "")
+    .replaceAll("{DWPI?뺣낫}", dwpiText ?? "")
     // Legacy mojibake placeholder compatibility.
-    .replaceAll("{???????????????깅♥???饔낅떽???????", applicationText ?? "")
-    .replaceAll("{??耀붾굝???????????援??????關履???", citationText ?? "")
-    .replaceAll("{DWPI ??耀붾굝?????????", dwpiText ?? "")
-    .replaceAll("{DWPI??耀붾굝?????????", dwpiText ?? "")
+    .replaceAll("{???????????????源끸솯???耀붾굝????????", applicationText ?? "")
+    .replaceAll("{???遺얘턁???????????????????쒙쭫???", citationText ?? "")
+    .replaceAll("{DWPI ???遺얘턁?????????", dwpiText ?? "")
+    .replaceAll("{DWPI???遺얘턁?????????", dwpiText ?? "")
     .replaceAll("{dwpi_info}", dwpiText ?? "");
 }
 
@@ -395,7 +389,7 @@ async function updateHistoryById(id, patch) {
 }
 
 function makeId() {
-  // ??????ル뭽????unique id
+  // ???????ル?????unique id
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
@@ -508,65 +502,11 @@ async function getAllResultTabs() {
 }
 
 async function dedupeExistingResultWindows() {
-  let resultTabs = [];
-  try {
-    resultTabs = await getAllResultTabs();
-  } catch {
-    return;
-  }
-
-  if (resultTabs.length === 0) {
-    resultWindowId = null;
-    return;
-  }
-
-  const primary = resultTabs.find((tab) => tab.windowId === resultWindowId) || resultTabs[0];
-  if (Number.isInteger(primary?.windowId)) {
-    resultWindowId = primary.windowId;
-  }
-
-  const duplicateTabIds = resultTabs
-    .filter((tab) => Number.isInteger(tab?.id) && tab.id !== primary.id)
-    .map((tab) => tab.id);
-
-  if (duplicateTabIds.length > 0) {
-    try {
-      await chrome.tabs.remove(duplicateTabIds);
-    } catch {}
-  }
+  resultWindowId = null;
 }
 
 async function openOrFocusResultWindow() {
-  await dedupeExistingResultWindows();
-
-  try {
-    const resultTabs = await getAllResultTabs();
-    if (resultTabs.length > 0) {
-      const primary = resultTabs.find((tab) => tab.windowId === resultWindowId) || resultTabs[0];
-
-      if (Number.isInteger(primary?.windowId)) {
-        try {
-          await chrome.windows.update(primary.windowId, { focused: true });
-        } catch {}
-        resultWindowId = primary.windowId;
-      }
-
-      if (Number.isInteger(primary?.id)) {
-        try {
-          await chrome.tabs.update(primary.id, { active: true });
-        } catch {}
-      }
-      return;
-    }
-  } catch {}
-
-  const w = await chrome.windows.create({
-    url: chrome.runtime.getURL(RESULT_PAGE_PATH),
-    type: "popup",
-    width: 720,
-    height: 780
-  });
-  resultWindowId = w.id;
+  resultWindowId = null;
 }
 
 void dedupeExistingResultWindows().catch(() => {});
@@ -595,6 +535,7 @@ function mergeCapturedHistoryRow(existing, incoming) {
     applicationNo: normalizeApplicationNo(next.applicationNo) || normalizeApplicationNo(prev.applicationNo) || null,
     citationText: nextCitation.length >= prevCitation.length ? nextCitation : prevCitation,
     dwpiText: nextDwpi || prevDwpi,
+    response: next.response || prev.response || "",
     targetMatched: prev.targetMatched === true || next.targetMatched === true,
     payload: next.payload || prev.payload || "",
     url: next.url || prev.url || "",
@@ -676,27 +617,13 @@ function extractAssistantText(apiJson) {
   }
 }
 
-async function getConfiguredModelName() {
-  if (typeof globalThis.KSUITE_GET_SHARED_SETTINGS === "function") {
-    try {
-      const sharedSettings = await globalThis.KSUITE_GET_SHARED_SETTINGS();
-      const configuredModel = String(sharedSettings?.defaultModel || "").trim();
-      if (configuredModel) return configuredModel;
-    } catch (error) {
-      console.warn("[K-SCAN] Failed to read shared model setting:", error);
-    }
-  }
-
-  return FALLBACK_MODEL_NAME;
-}
-
 async function callLocalChatApi(token, content) {
   const headers = {
     "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json"
   };
   const body = {
-    model: await getConfiguredModelName(),
+    model: MODEL_NAME,
     messages: [{ role: "user", content }]
   };
 
@@ -719,7 +646,7 @@ async function readResponseBodyText(tabId, requestId) {
     );
     return decodeBody(r?.body, r?.base64Encoded);
   } catch (error) {
-    return `getResponseBody 호출 실패: ${String(error?.message ?? error)}`;
+    return `getResponseBody ?몄텧 ?ㅽ뙣: ${String(error?.message ?? error)}`;
   }
 }
 
@@ -974,99 +901,53 @@ function writeQueueStatus() {
 }
 
 async function runEvaluationTask(task) {
-  const pair = task.pair;
-  const citationText = (pair?.citationText ?? "").trim();
-  const dwpiText = (pair?.dwpiText ?? "").trim();
+  const pair = task?.pair || {};
+  const citationText = normalizeCapturedText(pair?.citationText);
+  const dwpiText = normalizeCapturedText(pair?.dwpiText);
   const payloadRaw = pair?.payloadRaw ?? "";
-  const applicationNo = pair?.applicationNo ?? null;
+  const applicationNo = normalizeApplicationNo(pair?.applicationNo) || null;
   const queryVersionId = normalizeQueryVersionId(task?.queryVersionId || pair?.queryVersionId);
   const runId = normalizeRunId(task?.runId || pair?.runId);
   const bpMeta = pair?.bpMeta ?? {};
   const dwpiMeta = pair?.dwpiMeta ?? null;
   const overwriteHistoryId = normalizeHistoryId(task?.overwriteHistoryId);
 
-  // 평가 실행에 필요한 token/appText/template 로드
-  const store = await chrome.storage.local.get([
-    "ksuiteSharedApiKey",
-    "application_text",
-    TEMPLATE_KEY
-  ]);
-
-  const token = (store.ksuiteSharedApiKey ?? "").trim();
-  const appText = (store.application_text ?? "").trim();
-  const defaultTpl = await getDefaultTemplate();
-  const storedTpl = store[TEMPLATE_KEY];
-  const tpl = (typeof storedTpl === "string" && storedTpl.trim())
-    ? storedTpl
-    : defaultTpl;
-
-  if (!token || !appText || !citationText) {
+  if (!citationText) {
     if (overwriteHistoryId) {
-      const missingReason = !token
-        ? "API key is missing."
-        : (!appText ? "application_text is missing." : "citation text is missing.");
       await updateHistoryById(overwriteHistoryId, {
         apiOk: false,
         apiStatus: 0,
-        response: `재평가 실패: ${missingReason}`
+        response: "0"
       });
     }
     return { success: false };
   }
 
   const id = overwriteHistoryId || makeId();
-  const pendingItem = {
+  const item = {
     id,
-    time: normalizeTs(overwriteHistoryId ? Date.now() : bpMeta.ts),
+    time: normalizeTs(Date.now()),
     url: bpMeta.url,
     dwpiUrl: dwpiMeta?.url ?? null,
-    apiOk: null,
-    apiStatus: null,
-    applicationNo: applicationNo || null,
+    apiOk: true,
+    apiStatus: 0,
+    applicationNo,
     queryVersionId: queryVersionId || null,
     runId: runId || null,
     payload: payloadRaw,
-    citationText: citationText || "",
-    dwpiText: dwpiText || "",
-    response: "평가 요청 중..."
+    citationText,
+    dwpiText,
+    response: `0\n${citationText}`
   };
 
   if (overwriteHistoryId) {
-    await updateHistoryById(overwriteHistoryId, pendingItem);
+    await updateHistoryById(overwriteHistoryId, item);
   } else {
-    await pushHistory(pendingItem);
+    await pushHistory(item);
   }
 
-  const content = applyTemplate(
-    tpl,
-    appText,
-    citationText,
-    dwpiText || EMPTY_DWPI_INFO_TEXT
-  );
-
-  let apiResultText = "";
-  let apiOk = false;
-  let apiStatus = 0;
-
-  try {
-    const rr = await callLocalChatApi(token, content);
-    apiOk = rr.ok;
-    apiStatus = rr.status;
-    apiResultText = extractAssistantText(rr.json);
-  } catch (error) {
-    apiResultText = `API 요청 실패: ${String(error?.message ?? error)}`;
-  }
-
-  await updateHistoryById(id, {
-    apiOk,
-    apiStatus,
-    time: normalizeTs(Date.now()),
-    response: apiResultText
-  });
-
-  return { success: apiOk };
+  return { success: true };
 }
-
 function pumpEvaluationQueue() {
   while (evaluationRunning < MAX_PARALLEL_EVAL && evaluationQueue.length > 0) {
     const task = evaluationQueue.shift();
@@ -1152,6 +1033,7 @@ async function enqueueCitationPair(pair) {
     payload: pair?.payloadRaw ?? "",
     citationText,
     dwpiText: normalizeCapturedText(pair?.dwpiText ?? ""),
+    response: `0\n${citationText}`,
     targetMatched: pair?.targetMatched === true,
     url: pair?.bpMeta?.url ?? "",
     dwpiUrl: pair?.dwpiMeta?.url ?? "",
@@ -1161,10 +1043,75 @@ async function enqueueCitationPair(pair) {
 }
 
 async function enqueueReevaluationByHistoryIds(historyIds) {
-  const _ids = Array.isArray(historyIds)
+  const ids = Array.isArray(historyIds)
     ? historyIds.map((id) => normalizeHistoryId(id)).filter(Boolean)
     : [];
-  return { queued: 0, skipped: _ids.length, missing: 0 };
+  if (ids.length === 0) {
+    return { queued: 0, skipped: 0, missing: 0 };
+  }
+
+  const data = await chrome.storage.local.get([HISTORY_KEY]);
+  const history = Array.isArray(data[HISTORY_KEY]) ? data[HISTORY_KEY] : [];
+  const byId = new Map(
+    history
+      .filter((item) => item && typeof item === "object")
+      .map((item) => [normalizeHistoryId(item.id), item])
+  );
+
+  let queued = 0;
+  let skipped = 0;
+  let missing = 0;
+
+  ids.forEach((id) => {
+    const item = byId.get(id);
+    if (!item) {
+      missing += 1;
+      return;
+    }
+    if (reevaluatingHistoryIds.has(id)) {
+      skipped += 1;
+      return;
+    }
+
+    const citationText = resolveHistoryCitationText(item);
+    if (!citationText) {
+      skipped += 1;
+      return;
+    }
+
+    const dwpiText = resolveHistoryDwpiText(item);
+    reevaluatingHistoryIds.add(id);
+    evaluationQueue.push({
+      overwriteHistoryId: id,
+      queryVersionId: normalizeQueryVersionId(item?.queryVersionId),
+      runId: resolveHistoryFallbackRunId(item),
+      pair: {
+        citationText,
+        dwpiText,
+        payloadRaw: item?.payload ?? "",
+        applicationNo: normalizeApplicationNo(item?.applicationNo),
+        queryVersionId: normalizeQueryVersionId(item?.queryVersionId),
+        runId: resolveHistoryFallbackRunId(item),
+        bpMeta: {
+          ts: Date.now(),
+          url: item?.url ?? ""
+        },
+        dwpiMeta: item?.dwpiUrl ? { url: item.dwpiUrl } : null
+      }
+    });
+    queued += 1;
+  });
+
+  if (queued > 0) {
+    if (!evaluationCycleActive) {
+      evaluationCycleActive = true;
+      evaluationCompleted = 0;
+    }
+    writeQueueStatus();
+    pumpEvaluationQueue();
+  }
+
+  return { queued, skipped, missing };
 }
 
 function getPendingBpQueue(tabId) {
@@ -1267,18 +1214,18 @@ async function flushPendingPairsForTab(tabId) {
   }
 }
 
-// CDP getResponseBody 결과를 안전하게 문자열로 디코딩한다.
+// CDP getResponseBody 寃곌낵瑜??덉쟾?섍쾶 臾몄옄?대줈 ?붿퐫?⑺븳??
 function decodeBody(body, base64Encoded) {
   if (!base64Encoded) return body ?? "";
   try {
-    // atob는 binary string을 반환한다.
+    // atob??binary string??諛섑솚?쒕떎.
     const bin = atob(body || "");
-    // UTF-8 텍스트로 변환한다.
+    // UTF-8 ?띿뒪?몃줈 蹂?섑븳??
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
   } catch {
-    // 디코딩 실패 시 원문(body)을 그대로 반환한다.
+    // ?붿퐫???ㅽ뙣 ???먮Ц(body)??洹몃?濡?諛섑솚?쒕떎.
     return body ?? "";
   }
 }
@@ -1288,7 +1235,7 @@ async function attachDebugger(tabId, options = {}) {
   const rootTabId = Number.isInteger(options?.rootTabId)
     ? options.rootTabId
     : getCaptureRootTabId(tabId);
-  // 이미 attach된 탭은 재attach하지 않는다.
+  // ?대? attach????? ?촡ttach?섏? ?딅뒗??
   if (attachedTabs.get(tabId)?.attached) {
     captureRootByTab.set(tabId, rootTabId);
     return;
@@ -1302,13 +1249,12 @@ async function attachDebugger(tabId, options = {}) {
     attached = true;
     attachedTabs.set(tabId, { attached: true });
     captureRootByTab.set(tabId, rootTabId);
-    clearDerivedAttachRetryState(tabId);
 
     await chrome.debugger.sendCommand(target, "Network.enable", {
       // no-op options
     });
 
-    // ????????????????댟?? ???????????????곌떽釉붾????????꾩룆梨띰쭕????????癲됱빖??????????關?쒎첎?嫄????????遺븍き????????????? ???????????????????????筌뤾쑬???
+    // ?????????????????읐?? ???????????????怨뚮뼺?됰뗀?????????袁⑸즴筌?씛彛?????????뀀맩鍮?????????????롮쾸?椰?????????븍툖?????????????? ???????????????????????嶺뚮ㅎ????
     // await chrome.debugger.sendCommand(target, "Network.setCacheDisabled", { cacheDisabled: true });
 
     if (!pending.has(tabId)) pending.set(tabId, new Map());
@@ -1380,7 +1326,7 @@ function getTabHost(rawUrl) {
 
 async function autoAttachCaptureOnlyTabs(force = false) {
   const now = Date.now();
-  if (!force && (now - lastCaptureOnlyAutoAttachAt) < AUTO_ATTACH_THROTTLE_MS) return;
+  if (!force && (now - lastCaptureOnlyAutoAttachAt) < 1500) return;
   lastCaptureOnlyAutoAttachAt = now;
 
   const captureOnlyRoots = getActiveCaptureOnlyRootIds();
@@ -1428,9 +1374,7 @@ async function autoAttachCaptureOnlyTabs(force = false) {
 
       try {
         await attachDebugger(tabId, { rootTabId });
-      } catch {
-        scheduleDerivedAttachRetry(tabId, 0);
-      }
+      } catch {}
     }
   }
 }
@@ -1440,57 +1384,6 @@ async function detachCaptureScope(tabId) {
   for (const scopedTabId of scopedTabIds) {
     await detachDebugger(scopedTabId);
   }
-}
-
-function clearDerivedAttachRetryState(tabId) {
-  const current = derivedAttachRetryStateByTab.get(tabId);
-  if (current?.timer) {
-    clearTimeout(current.timer);
-  }
-  derivedAttachRetryStateByTab.delete(tabId);
-}
-
-function scheduleDerivedAttachRetry(tabId, attempt = 0) {
-  if (!Number.isInteger(tabId)) return;
-  if (attachedTabs.get(tabId)?.attached) {
-    clearDerivedAttachRetryState(tabId);
-    return;
-  }
-  if (attempt >= DERIVED_ATTACH_RETRY_DELAYS_MS.length) return;
-
-  const existing = derivedAttachRetryStateByTab.get(tabId);
-  if (existing && Number(existing.attempt || 0) >= attempt) {
-    return;
-  }
-  if (existing?.timer) {
-    clearTimeout(existing.timer);
-  }
-
-  const delayMs = Number(DERIVED_ATTACH_RETRY_DELAYS_MS[attempt] || 0);
-  const timer = setTimeout(() => {
-    const live = derivedAttachRetryStateByTab.get(tabId);
-    if (!live || live.timer !== timer) return;
-    derivedAttachRetryStateByTab.delete(tabId);
-
-    void chrome.tabs
-      .get(tabId)
-      .then((tab) => maybeAttachDerivedBundleClaimTab(tab))
-      .then(() => {
-        if (attachedTabs.get(tabId)?.attached) {
-          clearDerivedAttachRetryState(tabId);
-          return;
-        }
-        scheduleDerivedAttachRetry(tabId, attempt + 1);
-      })
-      .catch(() => {
-        scheduleDerivedAttachRetry(tabId, attempt + 1);
-      });
-  }, Math.max(0, delayMs));
-
-  derivedAttachRetryStateByTab.set(tabId, {
-    attempt,
-    timer
-  });
 }
 
 async function attachKResearchCaptureTab(rootTabId, targetTabId) {
@@ -1575,10 +1468,8 @@ async function maybeAttachDerivedBundleClaimTab(tab) {
 
   try {
     await attachDebugger(tabId, { rootTabId });
-    clearDerivedAttachRetryState(tabId);
   } catch (error) {
     console.warn("K-SCAN auto-attach failed:", error);
-    scheduleDerivedAttachRetry(tabId, 0);
   }
 }
 
@@ -1586,7 +1477,7 @@ chrome.debugger.onEvent.addListener(async (source, method, params) => {
   const tabId = source?.tabId;
   if (!tabId) return;
   if (!attachedTabs.get(tabId)?.attached) return;
-  // requestWillBeSent: bpService.do / getDWPIAbst.do ????濾?????遺얘턁?????? ?????怨뚮뼺?됰뗀???
+  // requestWillBeSent: bpService.do / getDWPIAbst.do ????癲???????븐뼐??????? ??????⑤슢堉??곕????
   if (method === "Network.requestWillBeSent") {
     const requestId = params?.requestId;
     const req = params?.request;
@@ -1614,7 +1505,7 @@ chrome.debugger.onEvent.addListener(async (source, method, params) => {
   }
 
 
-  // responseReceived?????URL, ??????嫄?????????濡?씀?濾??μ떜媛???????????????怨뺥닠??????
+  // responseReceived?????URL, ??????椰?????????嚥???癲??關?쒎첎?????????????????⑤벤???????
   if (method === "Network.responseReceived") {
     const url = params?.response?.url;
     const requestId = params?.requestId;
@@ -1666,7 +1557,6 @@ chrome.debugger.onEvent.addListener(async (source, method, params) => {
         });
         return;
       }
-
       const applicationNo = resolveCapturedApplicationNo({
         payloadRaw,
         requestUrl: meta?.url ?? "",
@@ -1694,7 +1584,7 @@ chrome.debugger.onEvent.addListener(async (source, method, params) => {
     return;
   }
 
-  // ????????쇰뮝???????沃섃뫂????????繹먮굞???
+  // ?????????곕츧???????亦껋꼦維????????濚밸Ŧ援???
   if (method === "Network.loadingFailed") {
     const requestId = params?.requestId;
     if (!requestId) return;
@@ -1703,7 +1593,7 @@ chrome.debugger.onEvent.addListener(async (source, method, params) => {
     const meta = map?.get(requestId);
     if (meta) map?.delete(requestId);
 
-    // DWPI ????濾????????????쇰뮝??????? ??遺얘턁????????????????????????袁⑸즴壤?????????ル뭽??????????bpService ??遺얘턁筌?（??????DWPI ????????살몖????遺얘턁???????꿔꺂?????
+    // DWPI ????癲?????????????곕츧??????? ????븐뼐?????????????????????????熬곣뫖利닷＄??????????ル???????????bpService ????븐뼐?곭춯?竊??????DWPI ?????????대첉??????븐뼐????????轅붽틓?????
     if (meta?.kind === "dwpi") {
       const bpQueue = pendingBpPairByTab.get(tabId);
       if (bpQueue && bpQueue.length > 0) {
@@ -1875,13 +1765,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const tabId = msg.tabId;
       try {
         if (!Number.isInteger(tabId)) {
-          throw new Error("유효한 탭 ID가 아닙니다.");
+          throw new Error("?좏슚????ID媛 ?꾨떃?덈떎.");
         }
 
         const tab = await chrome.tabs.get(tabId);
         const tabUrl = String(tab?.url || "");
         if (!isCapturableTabUrl(tabUrl)) {
-          throw new Error("HTTP/HTTPS 페이지에서만 캡처할 수 있습니다.");
+          throw new Error("HTTP/HTTPS ?섏씠吏?먯꽌留?罹≪쿂?????덉뒿?덈떎.");
         }
 
         await withTimeout(attachDebugger(tabId, { rootTabId: tabId }), 5000, "attachDebugger");
@@ -1928,17 +1818,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 chrome.tabs.onCreated.addListener((tab) => {
   void maybeAttachDerivedBundleClaimTab(tab);
-  if (Number.isInteger(tab?.id)) {
-    scheduleDerivedAttachRetry(tab.id, 0);
-  }
-  void autoAttachCaptureOnlyTabs(true).catch(() => {});
+  void autoAttachCaptureOnlyTabs(false).catch(() => {});
 });
 
 chrome.tabs.onUpdated.addListener((tabId, _changeInfo, tab) => {
   if (Number.isInteger(tab?.id)) {
     void maybeAttachDerivedBundleClaimTab(tab);
-    scheduleDerivedAttachRetry(tab.id, 0);
-    void autoAttachCaptureOnlyTabs(true).catch(() => {});
+    void autoAttachCaptureOnlyTabs(false).catch(() => {});
     return;
   }
 
@@ -1946,10 +1832,7 @@ chrome.tabs.onUpdated.addListener((tabId, _changeInfo, tab) => {
     .get(tabId)
     .then((fullTab) => {
       void maybeAttachDerivedBundleClaimTab(fullTab);
-      if (Number.isInteger(fullTab?.id)) {
-        scheduleDerivedAttachRetry(fullTab.id, 0);
-      }
-      void autoAttachCaptureOnlyTabs(true).catch(() => {});
+      void autoAttachCaptureOnlyTabs(false).catch(() => {});
     })
     .catch(() => {});
 });
@@ -1960,8 +1843,7 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
     .get(tabId)
     .then((tab) => {
       void maybeAttachDerivedBundleClaimTab(tab);
-      scheduleDerivedAttachRetry(tabId, 0);
-      void autoAttachCaptureOnlyTabs(true).catch(() => {});
+      void autoAttachCaptureOnlyTabs(false).catch(() => {});
     })
     .catch(() => {});
 });
@@ -1981,7 +1863,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   void chrome.storage.local.remove([EVALUATED_DEDUPE_KEYS_KEY, EVALUATED_APPNOS_LEGACY_KEY]).catch(() => {});
 });
 
-// ????????????살탾?????뽯＞??????detach (????關?쒎첎?嫄?濚밸쮦???
+// ?????????????댄꺘?????戮?폔??????detach (???????롮쾸?椰?嚥싲갭怡???
 chrome.tabs.onRemoved.addListener((tabId) => {
   const rootTabId = captureRootByTab.get(tabId);
   if (rootTabId === tabId) {
