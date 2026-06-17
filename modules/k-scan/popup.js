@@ -50,9 +50,29 @@ function normalizeRow(item, index) {
   };
 }
 
+function normalizeRowDedupeKey(row) {
+  const appNo = String(row?.applicationNo ?? "").replace(/\s+/g, "").toUpperCase();
+  if (appNo && /\d/.test(appNo)) return `app:${appNo}`;
+
+  const citationText = String(row?.citationText ?? "").trim().replace(/\s+/g, " ");
+  if (!citationText) return "";
+  return `claim:${citationText.toLowerCase().slice(0, 700)}`;
+}
+
 function getSortedRows(rawRows) {
   const rows = Array.isArray(rawRows) ? rawRows : [];
-  return rows.map(normalizeRow).filter((row) => row.citationText || row.applicationNo);
+  const seen = new Set();
+  const out = [];
+
+  rows.map(normalizeRow).forEach((row) => {
+    if (!row.citationText && !row.applicationNo) return;
+    const key = normalizeRowDedupeKey(row);
+    if (key && seen.has(key)) return;
+    if (key) seen.add(key);
+    out.push(row);
+  });
+
+  return out;
 }
 
 function formatDateTime(raw) {

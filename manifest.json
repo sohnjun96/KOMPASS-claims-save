@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "K-SUITE",
+  "name": "청구항 자동저장",
   "version": "1.4.3",
   "description": "특허 LLM 활용 도우미",
   "action": {
-    "default_title": "K-SUITE",
+    "default_title": "청구항 자동저장",
     "default_popup": "suite/popup.html"
   },
   "background": {

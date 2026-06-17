@@ -11,6 +11,7 @@ const RESULT_PAGE_PATH = "modules/k-scan/result.html";
 const BP_SERVICE_PATH = "/bpService.do";
 const DWPI_ABST_PATH = "/getDWPIAbst.do";
 const MAX_CAPTURE_ROWS = 3000;
+const RESPONSE_BODY_READ_RETRY_DELAYS_MS = Object.freeze([0, 40, 120]);
 const DWPI_PAIR_WAIT_MS = 3000;
 const EMPTY_DWPI_INFO_TEXT = "No DWPI information";
 const MAX_PARALLEL_EVAL = 12;
@@ -559,14 +560,57 @@ async function openOrFocusResultWindow() {
 
 void dedupeExistingResultWindows().catch(() => {});
 
+function normalizeCaptureDedupeKey(row) {
+  const appNo = normalizeApplicationNo(row?.applicationNo).replace(/\s+/g, "").toUpperCase();
+  if (appNo && /\d/.test(appNo)) return `app:${appNo}`;
+
+  const citationText = normalizeCapturedText(row?.citationText);
+  if (!citationText) return "";
+  return `claim:${citationText.replace(/\s+/g, " ").toLowerCase().slice(0, 700)}`;
+}
+
+function mergeCapturedHistoryRow(existing, incoming) {
+  const prev = existing && typeof existing === "object" ? existing : {};
+  const next = incoming && typeof incoming === "object" ? incoming : {};
+  const prevCitation = normalizeCapturedText(prev.citationText);
+  const nextCitation = normalizeCapturedText(next.citationText);
+  const prevDwpi = normalizeCapturedText(prev.dwpiText);
+  const nextDwpi = normalizeCapturedText(next.dwpiText);
+
+  return {
+    ...prev,
+    ...next,
+    id: prev.id || next.id,
+    applicationNo: normalizeApplicationNo(next.applicationNo) || normalizeApplicationNo(prev.applicationNo) || null,
+    citationText: nextCitation.length >= prevCitation.length ? nextCitation : prevCitation,
+    dwpiText: nextDwpi || prevDwpi,
+    targetMatched: prev.targetMatched === true || next.targetMatched === true,
+    payload: next.payload || prev.payload || "",
+    url: next.url || prev.url || "",
+    dwpiUrl: next.dwpiUrl || prev.dwpiUrl || ""
+  };
+}
+
 async function pushHistory(item) {
   const data = await chrome.storage.local.get([HISTORY_KEY]);
   const arr = Array.isArray(data[HISTORY_KEY]) ? data[HISTORY_KEY] : [];
-  arr.unshift(item);
-  if (arr.length > MAX_CAPTURE_ROWS) {
-    arr.length = MAX_CAPTURE_ROWS;
+  const key = normalizeCaptureDedupeKey(item);
+  let next;
+
+  if (key) {
+    const existingIndex = arr.findIndex((row) => normalizeCaptureDedupeKey(row) === key);
+    const merged = existingIndex >= 0
+      ? mergeCapturedHistoryRow(arr[existingIndex], item)
+      : item;
+    next = [
+      merged,
+      ...arr.filter((row, index) => index !== existingIndex && normalizeCaptureDedupeKey(row) !== key)
+    ];
+  } else {
+    next = [item, ...arr];
   }
-  await chrome.storage.local.set({ [HISTORY_KEY]: arr });
+
+  await chrome.storage.local.set({ [HISTORY_KEY]: next.slice(0, MAX_CAPTURE_ROWS) });
 }
 
 async function pushKResearchCaptureRow(item) {
@@ -668,6 +712,48 @@ async function readResponseBodyText(tabId, requestId) {
   }
 }
 
+function sleepMs(delayMs) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, Math.max(0, Number(delayMs) || 0));
+  });
+}
+
+async function readResponseBodyResult(tabId, requestId) {
+  let lastError = null;
+
+  for (let index = 0; index < RESPONSE_BODY_READ_RETRY_DELAYS_MS.length; index += 1) {
+    if (index > 0) {
+      await sleepMs(RESPONSE_BODY_READ_RETRY_DELAYS_MS[index]);
+    }
+
+    try {
+      const r = await chrome.debugger.sendCommand(
+        { tabId },
+        "Network.getResponseBody",
+        { requestId }
+      );
+      const text = decodeBody(r?.body, r?.base64Encoded);
+      if (normalizeCapturedText(text)) {
+        return {
+          text,
+          ok: true,
+          attempt: index + 1,
+          error: null
+        };
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  return {
+    text: "",
+    ok: false,
+    attempt: RESPONSE_BODY_READ_RETRY_DELAYS_MS.length,
+    error: lastError?.message || String(lastError || "")
+  };
+}
+
 function normalizeApplicationNo(raw) {
   return String(raw ?? "").trim();
 }
@@ -701,6 +787,29 @@ function extractFallbackCitationTextFromPayload(payloadRaw) {
   if (parts.length === 0) return sanitizeExtractedText(raw);
 
   return parts.reduce((longest, cur) => (cur.length > longest.length ? cur : longest), "");
+}
+
+function resolveCitationTextForCapture(responseText, payloadRaw) {
+  const fromResponse = extractClaimOnly(responseText);
+  if (fromResponse) {
+    return {
+      citationText: fromResponse,
+      source: "response_body"
+    };
+  }
+
+  const fromPayload = extractFallbackCitationTextFromPayload(payloadRaw);
+  if (fromPayload) {
+    return {
+      citationText: fromPayload,
+      source: "payload_fallback"
+    };
+  }
+
+  return {
+    citationText: "",
+    source: "empty"
+  };
 }
 
 function resolveHistoryCitationText(item) {
@@ -1471,18 +1580,31 @@ chrome.debugger.onEvent.addListener(async (source, method, params) => {
     if (!meta) return;
 
     map.delete(requestId);
-    const bodyText = await readResponseBodyText(tabId, requestId);
+    const bodyResult = await readResponseBodyResult(tabId, requestId);
+    const bodyText = String(bodyResult?.text || "");
 
     if (meta.kind === "bp") {
       const targetMatched = isKResearchTargetBpCaptured(meta, bodyText);
 
       const payloadRaw = meta.payload ?? "";
+      const citationResolved = resolveCitationTextForCapture(bodyText, payloadRaw);
+      const citationText = citationResolved.citationText;
+      if (!normalizeCapturedText(citationText)) {
+        console.debug("K-SCAN capture skipped: empty citation text", {
+          tabId,
+          url: meta?.url || "",
+          responseBodyOk: bodyResult?.ok === true,
+          responseBodyError: bodyResult?.error || "",
+          citationSource: citationResolved.source
+        });
+        return;
+      }
+
       const applicationNo = resolveCapturedApplicationNo({
         payloadRaw,
         requestUrl: meta?.url ?? "",
         responseText: bodyText
       });
-      const citationText = extractClaimOnly(bodyText);
 
       stagePendingBpPair(tabId, {
         bundleId: makeId(),
